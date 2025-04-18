@@ -17,6 +17,7 @@ void setup()
 int count=0;
 void loop()
 {  // put your main code here, to run repeatedly:
+  Serial1.print( "LOOP: BEE-526 - \n" );
   Serial1.printf( "LOOP: BEE-526 - Self-leveling Platform Control System - %d\n", count++ );
 }
 
