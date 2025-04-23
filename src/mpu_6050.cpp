@@ -13,12 +13,45 @@
 
 #define  PWR_SLEEP_BIT  0x40
 
+// Constructor
 mpu6050::mpu6050()
 {
     init();
 }
 
+// Public - return current power state
+mpu6050::POWER_STATE
+mpu6050::getPowerState(void)
+{
+    return ( (powerReg & 0x40) ? POWER_ON : POWER_OFF );
+}
 
+
+// Public - reset the power state
+mpu6050::POWER_STATE
+mpu6050::setPowerState(POWER_STATE newState)
+{
+    POWER_STATE previousState = getPowerState();
+
+    if( newState == previousState )
+    { // The current state matches the proposed (new) state
+        Serial.printf( "WARN: MPU6050 device state unchanged, (%s)\n"
+                    , (POWER_ON == newState) ? "POWER_ON" : "POWER_OFF"
+                    );
+    }
+    else
+    {
+        writePowerRegister( newState );
+    }
+
+    return previousState;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+// Private - read the power register and write to powerReg  
 mpu6050::POWER_STATE
 mpu6050::readPowerRegister( void )
 { // read the value of the power register 
@@ -42,8 +75,9 @@ mpu6050::readPowerRegister( void )
 }
 
 
+// Private - write the power register and write value to powerReg  
 mpu6050::POWER_STATE
-mpu6050::setPowerRegister( mpu6050::POWER_STATE newState)
+mpu6050::writePowerRegister( mpu6050::POWER_STATE newState)
 {
     POWER_STATE ret = POWER_FAILED;
     // Enable MPU 6050 - use Power register 0x6B
@@ -55,8 +89,8 @@ mpu6050::setPowerRegister( mpu6050::POWER_STATE newState)
     {
         ret = curState;
         Serial.printf( "WARN: MPU6050 device state unchanged, (%s)\n"
-            , (curState == POWER_ON) ? "POWER_ON" : "POWER_OFF"
-            );
+                       ,(curState == POWER_ON) ? "POWER_ON" : "POWER_OFF"
+                    );
     }
     else
     {
@@ -97,31 +131,7 @@ mpu6050::setPowerRegister( mpu6050::POWER_STATE newState)
 }
 
 
-mpu6050::POWER_STATE
-mpu6050::getPowerState(void)
-{
-    return ( (powerReg & 0x40) ? POWER_ON : POWER_OFF );
-}
 
-
-mpu6050::POWER_STATE
-mpu6050::setPowerState(POWER_STATE newState)
-{
-    POWER_STATE previousState = getPowerState();
-
-    if( newState == previousState )
-    { // The current state matches the proposed (new) state
-        Serial.printf( "WARN: MPU6050 device state unchanged, (%s)\n"
-                    , (POWER_ON == newState) ? "POWER_ON" : "POWER_OFF"
-                    );
-    }
-    else
-    {
-        setPowerRegister( newState );
-    }
-
-    return previousState;
-}
 
 void mpu6050::init( void )
 {
@@ -131,12 +141,6 @@ void mpu6050::init( void )
 
     // Set the power register value, in this class
     readPowerRegister();
-
-    // // Enable MPU 6050 - use Power register
-    // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
-    // Wire1.write(0x6B); // Gyro-Base Register 43 X 6
-    // Wire1.write(0x00); // Set the power management register to 0
-    // Wire1.endTransmission();
   
     // // Filter
     // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address

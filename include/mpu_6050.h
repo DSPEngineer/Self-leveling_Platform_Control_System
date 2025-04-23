@@ -36,7 +36,7 @@ class mpu6050
 
     private:
         void init(void);
-        POWER_STATE setPowerRegister( POWER_STATE newState);
+        POWER_STATE writePowerRegister( POWER_STATE newState);
         POWER_STATE readPowerRegister(void);
 
         const uint32_t  I2C_CLOCK_SPEED     = 400000;   // MPU6050 I2C address
