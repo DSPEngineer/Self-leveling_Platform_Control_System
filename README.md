@@ -5,16 +5,24 @@
 - Designer: Jose Pagan
 -  Started: 04/07/2025
 
+## 05/05/2025
+- Weekend Goals:
+
 
 ## 04/30/2025
-- 
-
-## 04/25/2025
 - Weekend goals:
   - Learn Euler angles
   - Learn more about digital LPF
   - apply this to accelerometer and gyro readings
 - Update code and initiate github
+
+
+## 04/25/2025 
+- Weekend goals:
+  - Complete Robot arm
+  - Understand Motor control
+- Update code and initiate github
+
 
 ## 04/15/2025
 - Consulted with Dr. Berger on I2C debug
