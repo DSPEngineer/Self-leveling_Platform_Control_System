@@ -11,13 +11,13 @@
 #include <Wire.h>
 
 #define POWER_STRING( a )  \
-    ( POWER_SLEEP == (a) ) ? "SLEEP" : \
-    ( POWER_WAKE == (a) )  ? "WAKE" : "FAILED"
+    ( mpu6050::POWER_SLEEP == (a) ) ? "SLEEP" : \
+    ( mpu6050::POWER_WAKE == (a) )  ? "WAKE" : "FAILED"
 
     
 #define POWER_STATE( a ) ( \
-    ( POWER_SLEEP == (a) ) ? POWER_SLEEP : \
-    ( POWER_WAKE == (a) )  ? POWER_WAKE : POWER_FAILED )
+    ( mpu6050::POWER_SLEEP == (a) ) ? mpu6050::POWER_SLEEP : \
+    ( mpu6050::POWER_WAKE == (a) )  ? mpu6050::POWER_WAKE : mpu6050::POWER_FAILED )
 
 
 class mpu6050
@@ -38,20 +38,21 @@ class mpu6050
     typedef enum  {
         POWER_FAILED = -1,
         POWER_SLEEP,
-        POWER_WAKE
+        POWER_WAKE,
+        MAX_POWER_STATE
     } POWER_STATE;
 
     mpu6050( uint8_t ado = 0 );     // Constructor
     ~mpu6050();                     // Destructor
 
     ERR_CODE            readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
-    ERR_CODE           writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
+    ERR_CODE            writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
 
     // Read the sensor ID for the "WhoAmI" register
     u_char              getSensorID(void);
 
     // Reset the Chip
-    void                sensorReset();
+    ERR_CODE            sensorReset( void );
 
     // Chip power state methods 
     //   Accessor - returns current state
@@ -81,6 +82,7 @@ class mpu6050
 
     uint8_t         addressI2C          = 0xff;         // Computed Address
     u_char          sensorID            = 0xff;         // ID of this sensor (Who-Am-I)
+    u_char          powerReg            = 0xff;         // ID of this sensor (Who-Am-I)
     POWER_STATE     powerState          = POWER_FAILED; // Power management register #1
 
     float RateRoll                      = 0;

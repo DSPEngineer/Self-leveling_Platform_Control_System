@@ -15,13 +15,22 @@
 #define  PWR_SLEEP_BIT      0x40
 #define  TEMP_DISABLE_BIT   0x08
 
+#define SERIAL_BAUD_RATE  115200
+
 
 /***********************************************************************
 **  Constructor
 ************************************************************************/
 mpu6050::mpu6050( uint8_t ado )
 {
-    Serial.printf( "INFO: MPU6050 Constructor\n" );
+    Serial.printf( " INFO: MPU6050 Constructor\n" );
+
+    // Serial.begin( SERIAL_BAUD_RATE );
+    // Serial.printf( " INFO: MPU6050 Serial Baud: %d\n", SERIAL_BAUD_RATE );
+    // delay(2000);
+
+    Wire1.begin(); // Start I2C communication
+    delay(1000);
 
     if( 1 < ado )
     { // ADO value is out of range
@@ -34,15 +43,10 @@ mpu6050::mpu6050( uint8_t ado )
     }
 
     addressI2C = I2C_BASE + sensorADO; // Compute the I2C address    
-    powerState = readPowerRegister(); // Initialize power register
 
     // Initialize the device
     init();
 
-    sensorID = readSensorID(); // Read the sensor ID
-    Serial.printf( "INFO: MPU6050 ID: %#x, ADO: %d, I2C Address: %#x\n"
-                   , sensorID, sensorADO, addressI2C  
-                );
 }
 
 
@@ -52,7 +56,7 @@ mpu6050::mpu6050( uint8_t ado )
 mpu6050::~mpu6050()
 {
     // Destructor
-    Serial.printf( "INFO: MPU6050 Destructor\n" );
+    Serial.printf( " INFO: MPU6050 Destructor\n" );
     Wire1.end(); // Stop I2C communication
 
 }
@@ -64,7 +68,7 @@ mpu6050::~mpu6050()
 mpu6050::POWER_STATE
 mpu6050::getPowerState()
 {
-    return ( ( powerState & PWR_SLEEP_BIT ) ? POWER_SLEEP : POWER_WAKE );
+    return powerState;
 }
 
 
@@ -239,20 +243,16 @@ mpu6050::readSensorID(void)
 
     if( MPU6050_SUCCESS != errCode )
     { // Read failed
-        Serial.printf( "ERROR: MPU6050 readSensorID() failed with error [%d]\n", errCode );
+        Serial.printf( "ERROR: MPU6050 readSensorID failed with error [%d]\n", errCode );
         sensorID = 0xFF; // Set to invalid value
     }
-    else
-    { // Read was successful
-        Serial.printf( "INFO: MPU6050 readSensorID() -- ID: %#x\n", sensorID );
-    }
+    // else
+    // { // Read was successful
+    //     Serial.printf( " INFO: MPU6050 readSensorID -- ID: %#x\n", sensorID );
+    // }
 
     return sensorID;
 }
-
-
-
-
 
 
 /***********************************************************************
@@ -265,19 +265,19 @@ mpu6050::setPowerState(POWER_STATE newState)
     uint8_t currentPowerReg = 0xFF;
     ERR_CODE retCode = MPU6050_ERROR;
 
-    Serial.printf( "WARN: MPU6050 setPowerState() -- new power state: (%d) [%s]\n"
+    Serial.printf( " INFO: MPU6050 setPowerState() -- new power state: (%d) [%s]\n"
                    ,newState
                    ,POWER_STRING( newState )
                  );
 
-    Serial.printf( "WARN: MPU6050 setPowerState() -- current power state: (%d) [%s]\n"
+    Serial.printf( " INFO: MPU6050 setPowerState() -- current power state: (%d) [%s]\n"
                    ,powerState
                    ,POWER_STRING( powerState )
                  );
 
     if( newState == powerState)
     { // The current state matches the proposed (new) state
-        Serial.printf( "WARN: MPU6050 setPowerState() -- device state unchanged, (%s)\n"
+        Serial.printf( " WARN: MPU6050 setPowerState() -- device state unchanged, (%s)\n"
                        ,POWER_STRING( newState )
                     );
     }
@@ -288,6 +288,10 @@ mpu6050::setPowerState(POWER_STATE newState)
     }
     else
     {
+        Serial.printf( " INFO: MPU6050 setPowerState() --   current power reg: (%#x) [%s]\n"
+                   ,currentPowerReg
+                   ,POWER_STRING( !(currentPowerReg & PWR_SLEEP_BIT) )                   
+                 );
         if( POWER_SLEEP == newState )
         { // Set the new power value and send to MPU6050
             currentPowerReg |= PWR_SLEEP_BIT;
@@ -313,7 +317,7 @@ mpu6050::setPowerState(POWER_STATE newState)
         }
         else
         {  // Write successfully sent a single byte
-            Serial.printf( "INFO: MPU6050 power state set to %s\n", POWER_STRING( powerState ) );
+            Serial.printf( " INFO: MPU6050 power state set to %s\n", POWER_STRING( powerState ) );
         }
         Wire1.endTransmission();
     }
@@ -335,24 +339,23 @@ mpu6050::POWER_STATE
 mpu6050::
 readPowerRegister( void )
 { // read the value of the power register 
-    uint8_t powerReg = 0xFF;
 
     ERR_CODE errRet = readI2cRegisters( (uint8_t)PWR_MGMT_1, (uint8_t *)&powerReg, (uint8_t)1 );
 
     if( MPU6050_SUCCESS != errRet )
     { // Read failed
-        Serial.printf( "ERROR: MPU6050 readPowerRegister() failed with error [%d]\n", errRet );
+        Serial.printf( "ERROR: MPU6050 readPowerRegister failed with error [%d]\n", errRet );
         powerState = POWER_FAILED; // Set to invalid value
     }
     else
     { // Read was successful
-        Serial.printf( "INFO: MPU6050 readPowerRegister() -- ID: %#x\n", powerReg );
         powerState = ( powerReg & PWR_SLEEP_BIT ) ? POWER_SLEEP : POWER_WAKE;
+        Serial.printf( " INFO: MPU6050 readPowerRegister Power Reg: [%#x], State: [%s]\n"
+                    , powerReg
+                    , POWER_STRING( powerState )
+                    );
     }
 
-    Serial.printf( "INFO: MPU6050 readPowerRegister() -- Power State: [%s]\n"
-                   ,POWER_STRING( powerState )
-                 );
 
     return powerState;
 }
@@ -361,16 +364,46 @@ readPowerRegister( void )
 /***********************************************************************
 **
 ************************************************************************/
-void
-mpu6050::
-sensorReset( void )
+mpu6050::ERR_CODE
+mpu6050::sensorReset( void )
 {
-    u_char currentPowerState = readPowerRegister();
+    ERR_CODE retVal = MPU6050_SUCCESS;
 
-    Wire1.beginTransmission( addressI2C ); // MPU6050 I2C address
-    Wire1.write( PWR_MGMT_1 );
-    Wire1.write( currentPowerState | PWR_RESET_BIT );
-    Wire1.endTransmission();
+    // Refresh the current Power management Register value
+    if( POWER_FAILED == ( powerState = readPowerRegister() ) )
+    { // Read failed
+        Serial.printf( "ERROR: MPU6050 sensorReset failed with error [%d]\n", powerState );
+        retVal = MPU6050_ERROR;
+    }
+    else
+    { // Success on reding the MPU6050 power register
+        if( Wire1.beginTransmission( addressI2C ), // MPU6050 I2C address, returns nothing
+             1 != Wire1.write( PWR_MGMT_1 ) // write register offset, returns 1 on success
+          )
+        { // the write failed to send the address byte
+            Serial.printf( "ERROR: I2C failed to send power byte to MPU6050\n" );
+            retVal = MPU6050_I2C_WRITE;
+        }
+        else if( 1 != Wire1.write( powerReg | PWR_RESET_BIT ) )
+        { // the write failed to send one byte
+            Serial.printf( "ERROR: failed to set RESET state on the MPU6050\n" );
+            retVal = MPU6050_I2C_WRITE;
+        }
+
+        // Always try to end the transmission
+        {
+            int cmdRet = Wire1.endTransmission();
+
+            if( 0 != cmdRet )
+            { // Report if ending transmission fails
+                Serial.printf( "ERROR: MPU6050 sensorReset failed with error [%d]\n", retVal );
+                retVal = MPU6050_I2C_ERROR; // Set to invalid value
+            }
+        }
+
+    }
+
+    return retVal;
 }
 
 
@@ -381,13 +414,20 @@ void
 mpu6050::init( void )
 {
     Wire1.setClock( I2C_CLOCK_SPEED ); // Set I2C clock speed to 400kHz
+    Serial.printf( " INFO: MPU6050 Init I2C Clock speed: (%d)\n", I2C_CLOCK_SPEED );
+
     Wire1.begin(); // Start I2C communication
     delay( 250 );
 
-    // Set the power register value, in this class
-    int regVal = readPowerRegister();
-    Serial.printf( "INFO: MPU6050 Init: readPowerRegister()=%#x (%s)\n", regVal
-                   ,( POWER_WAKE == regVal ) ? "WAKE" : "SLEEP"
+    sensorID = readSensorID(); // Read the sensor ID
+    Serial.printf( " INFO: MPU6050 Init ID: %#x, ADO: %d, I2C Address: %#x\n"
+                   , sensorID, sensorADO, addressI2C  
+                );
+
+    powerState = readPowerRegister();  // Initialize power register
+    Serial.printf( " INFO: MPU6050 Init: readPowerRegister()=%#x (%s)\n"
+                   , powerState
+                   , POWER_STRING(powerState)
                  );
 
     // // Filter
