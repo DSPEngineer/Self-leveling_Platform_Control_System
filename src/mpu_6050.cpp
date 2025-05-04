@@ -408,29 +408,33 @@ mpu6050::sensorReset( void )
 
 
 /***********************************************************************
-**
+** Function to INitialize the MPU6050 sensor board
 ************************************************************************/
 void 
 mpu6050::init( void )
 {
-    Wire1.setClock( I2C_CLOCK_SPEED ); // Set I2C clock speed to 400kHz
+    // Set the Teensy I2c clock speed to 400kHz
+    Wire1.setClock( I2C_CLOCK_SPEED );
     Serial.printf( " INFO: MPU6050 Init I2C Clock speed: (%d)\n", I2C_CLOCK_SPEED );
 
-    Wire1.begin(); // Start I2C communication
+    // Start I2C communication
+    Wire1.begin();
     delay( 250 );
 
+    // // Unit ID "Who Am I"
     sensorID = readSensorID(); // Read the sensor ID
     Serial.printf( " INFO: MPU6050 Init ID: %#x, ADO: %d, I2C Address: %#x\n"
                    , sensorID, sensorADO, addressI2C  
                 );
 
-    powerState = readPowerRegister();  // Initialize power register
+    // Read the initial value of the power register
+    powerState = readPowerRegister();
     Serial.printf( " INFO: MPU6050 Init: readPowerRegister()=%#x (%s)\n"
                    , powerState
                    , POWER_STRING(powerState)
                  );
 
-    // // Filter
+    // Setting the Filter
     // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
     // Wire1.write(0x1A); // Starting with register 0x1A (Low Pass FIlter)
     // Wire1.write(0x05); // Set the low pass filter to 10Hz
@@ -440,11 +444,6 @@ mpu6050::init( void )
     // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
     // Wire1.write(0x1B); // Starting with register 0x1B (Sensitivity scale factor)
     // Wire1.write(0x08); // Set the scale factor bits [3:4], value=1 ( +/- 500 deg/sec )
-    // Wire1.endTransmission();
-  
-    // // Unit ID "Who Am I"
-    // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
-    // Wire1.write(0x75); // Who Am I register
     // Wire1.endTransmission();
   
 }
