@@ -31,11 +31,6 @@ void setup()
   mySensor->setPowerState( mpu6050::POWER_WAKE );
   delay(1000);
 
-  // Wire1.setClock(400000); // Set I2C clock speed to 400kHz
-//  Wire1.begin(); // Start I2C communication
-//  delay(1000);
-
-
   Serial.printf( "    * Sensor ID: %#x \n",  mySensor->getSensorID() );
 
 //  Serial.printf( "    * Power Reg: %#x\n",  mySensor->readPowerRegister() );
@@ -59,13 +54,26 @@ uint16_t motorAngle = 90;
 
 void loop()
 {
+  uint16_t temp = -1;
+  
+  mpu6050::ERR_CODE err = mySensor->getTemperature( &temp );
+
+  if( mpu6050::MPU6050_SUCCESS != err )
+  { // Read failed
+    Serial.printf( "ERROR: MPU6050 getTemperature failed with error [%d]\n", err );
+    temp = -1;
+  }
+
   servo.setAngle( motorAngle );
-  Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: %s \n"
+  Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: [%s], Temp: [%f C, %f F] \n"
                  , motorAngle
                  , POWER_STRING(mySensor->getPowerState())
+                 , ( (float)temp / 340 ) + 36.53
+                 , ( ( (float)temp / 340 ) + 36.53 ) * 9.0 / 5.0 + 32
                );
 
   delay(125);
+
 
   if ( motorAngle > 120) 
   {
