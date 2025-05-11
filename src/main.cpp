@@ -18,7 +18,7 @@ void setup()
   delay(2000);
 
   Serial.begin( SERIAL_BAUD_RATE );
-  delay(3000);
+  //delay(3000);
 
   Serial.print( "SETUP: BEE-526 - Self-leveling Platform Control System\n" );
   Serial.printf( " INFO: Serial Baud: %d\n", SERIAL_BAUD_RATE );
@@ -63,16 +63,36 @@ void loop()
     Serial.printf( "ERROR: MPU6050 getTemperature failed with error [%d]\n", err );
     temp = -1;
   }
+  else
+  {
+    servo.setAngle( motorAngle );
+    Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: [%s], Temp: [%f C, %f F] \n"
+                   , motorAngle
+                   , POWER_STRING(mySensor->getPowerState())
+                   , ( (float)temp / 340 ) + 36.53
+                   , ( ( (float)temp / 340 ) + 36.53 ) * 9.0 / 5.0 + 32
+                 );
+    delay(125);
+  }
 
-  servo.setAngle( motorAngle );
-  Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: [%s], Temp: [%f C, %f F] \n"
-                 , motorAngle
-                 , POWER_STRING(mySensor->getPowerState())
-                 , ( (float)temp / 340 ) + 36.53
-                 , ( ( (float)temp / 340 ) + 36.53 ) * 9.0 / 5.0 + 32
-               );
+//  uint16_t gx, gy, gz;
+//  err = mySensor->getGyroValues( (uint16_t *)&gx, (uint16_t *)&gy, (uint16_t *)&gz );
+  uint16_t gx, gy, gz;
+  err = mySensor->getGyroValues( &gx, &gy, &gz );
+  if( mpu6050::MPU6050_SUCCESS != err )
+  { // Read failed
+    Serial.printf( "ERROR: MPU6050 getGyroValues failed with error [%d]\n", err );
+    temp = -1;
+  }
+  else
+  {
+    servo.setAngle( motorAngle );
+    Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
+                    , (uint16_t)gx, (uint16_t)gy, (uint16_t)gz
+                 );
+    delay(125);
+  }
 
-  delay(125);
 
 
   if ( motorAngle > 120) 

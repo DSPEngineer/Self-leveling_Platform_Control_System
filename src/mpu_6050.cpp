@@ -12,6 +12,8 @@
 #define  PWR_MGMT_2         0x6C
 #define  TEMP_H_OUT         0x41
 #define  TEMP_L_OUT         0x42
+#define  GYRO_REG_BASE      0x43
+#define  GYRO_REG_SIZE      6
 
 #define  PWR_RESET_BIT      0x80
 #define  PWR_SLEEP_BIT      0x40
@@ -523,24 +525,24 @@ mpu6050::readTemperatureRegister( void )
     else
     { // Power and temperature are enabled
         // Read the temperature registers
-        uint16_t rawData[2] = { 0, 0 };
+        uint16_t tempRaw[2] = { 0, 0 };
 
-        if( MPU6050_SUCCESS != ( retVal = readI2cRegisters( (uint8_t)TEMP_H_OUT, (uint8_t *)&rawData[1], (uint8_t)1 ) ) )
+        if( MPU6050_SUCCESS != ( retVal = readI2cRegisters( (uint8_t)TEMP_H_OUT, (uint8_t *)&tempRaw[1], (uint8_t)1 ) ) )
         { // Read failed
             Serial.printf( "ERROR: MPU6050 readTemperature Hi readI2cRegisters failed with error [%d]\n", retVal );
             temperatureState = TEMPERATURE_FAILED; // Set to invalid value
         }
-        else if( MPU6050_SUCCESS != (retVal = readI2cRegisters( (uint8_t)TEMP_L_OUT, (uint8_t *)&rawData[0], (uint8_t)1 ) ) )
+        else if( MPU6050_SUCCESS != (retVal = readI2cRegisters( (uint8_t)TEMP_L_OUT, (uint8_t *)&tempRaw[0], (uint8_t)1 ) ) )
         { // Read failed
             Serial.printf( "ERROR: MPU6050 readTemperature Lo failed with error [%d]\n", retVal );
             retVal = MPU6050_I2C_READ; // Set to invalid value
         }
         else
         { // Reads were successful
-            int16_t temp = (rawData[1] << 8 ) | rawData[0];
+            int16_t temp = (tempRaw[1] << 8 ) | tempRaw[0];
             lastTemperature = (float)temp; // Combine the two bytes
             Serial.printf( " INFO: MPU6050 readTemperature -- read registers (%02#x:%02#x), Temp: %f\n"
-                           , rawData[1], rawData[0], temperature
+                           , tempRaw[1], tempRaw[0], temperature
                          );
  
             lastTemperature = ( temp / 340.0 ) + 36.53; // Convert to degrees C
@@ -552,6 +554,66 @@ mpu6050::readTemperatureRegister( void )
     }
 
     return retVal;
+}
+
+
+/***********************************************************************
+**
+************************************************************************/
+mpu6050::ERR_CODE
+mpu6050::getGyroValues( uint16_t *x, uint16_t *y, uint16_t *z )
+{
+    ERR_CODE retVal = MPU6050_ERROR;
+
+    if( NULL == x || NULL == y || NULL == z )
+    { // Pointer is NULL
+        Serial.printf( "ERROR: MPU6050 getGyroValues() -- pointer is NULL\n" );
+        retVal = MPU6050_INVALID_POINTER;
+    }
+    else if( MPU6050_SUCCESS != ( retVal = readGyroRegisters() ) )
+    { // Reading of registers failed
+        Serial.printf( "ERROR: MPU6050 getGyroValues() failed with error [%d]\n", retVal );
+    }
+    else
+    { // Read was successful
+        *x = GyroX;
+        *y = GyroY;
+        *z = GyroZ;
+
+        Serial.printf( " INFO: MPU6050 getGyroValues -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
+                       , (uint16_t)*x, (uint16_t)*y, (uint16_t)*z
+                     );
+    }
+
+    return retVal;
+}
+
+/***********************************************************************
+**
+************************************************************************/
+mpu6050::ERR_CODE
+mpu6050::readGyroRegisters( void )
+{
+    ERR_CODE retVal = readI2cRegisters( (uint8_t)GYRO_REG_BASE, (uint8_t *)gyroRaw, (uint8_t)GYRO_REG_SIZE );
+
+    if( MPU6050_SUCCESS != retVal )
+    { // Read failed
+        Serial.printf( "ERROR: MPU6050 readGyroRegisters failed with error [%d]\n", retVal );
+    }
+    else
+    { // Read was successful
+        GyroX = ( (gyroRaw[0] >> 8) ) | (gyroRaw[0] & 0xFF) << 8;
+        GyroY = ( (gyroRaw[1] >> 8) ) | (gyroRaw[1] & 0xFF) << 8;
+        GyroZ = ( (gyroRaw[2] >> 8) ) | (gyroRaw[2] & 0xFF) << 8 ;
+        // Serial.printf( " INFO: MPU6050 readGyroRegisters -- GyroX: (%02#x:%02#x), GyroY: (%02#x:%02#x), GyroZ: (%02#x:%02#x)\n"
+        //                , gyroRaw[0], gyroRaw[1], gyroRaw[2], gyroRaw[3], gyroRaw[4], gyroRaw[5]
+        //              );
+        Serial.printf( " INFO: MPU6050 readGyroRegisters -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
+                       , (uint16_t)GyroX, (uint16_t)GyroY, (uint16_t)GyroZ
+                     );
+    }
+    return retVal;
+
 }
 
 
@@ -640,7 +702,7 @@ mpu6050::init( void )
     {
         // Initial read of the temperature
         Serial.printf( " INFO: MPU6050 Init: readTempeRegister()=(%02#x:%02#x)\n"
-                    , rawData[0], rawData[1]
+                    , tempRaw[0], tempRaw[1]
                     );
         Serial.printf( " INFO: MPU6050 Init: temperature: %f [%sed]\n"
                        , temperature, TEMPERATURE_STRING(temperatureState) );

@@ -66,9 +66,6 @@ class mpu6050
     mpu6050( uint8_t ado = 0 );     // Constructor
     ~mpu6050();                     // Destructor
 
-    ERR_CODE             readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
-    ERR_CODE            writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
-
     // Read the sensor ID for the "WhoAmI" register
     u_char              getSensorID(void);
 
@@ -82,27 +79,28 @@ class mpu6050
     ERR_CODE            setPowerState(POWER_STATE state);
 
 
-    //   Mutator - set new state and return previous state
+    //  Accessor/Mutator - temperature state
     TEMPERATURE_STATE   getTempState( void );
     ERR_CODE            setTempState(TEMPERATURE_STATE state);
-    // Read the Temperature
-    ERR_CODE            readTemperatureRegister( void );
+    // Read the Temperature value
     ERR_CODE            getTemperature( uint16_t *temp );
 
-//        void gyroSignals(void);
-//        void setFilter(uint8_t filter);
-//        void setSensitivity(uint8_t sensitivity);
-//        uint16_t getSensorID(void);
-//        float getRateRoll(void);
-//        float getRatePitch(void);
-//        float getRateYaw(void);
+    // Read the Gyro values
+    ERR_CODE            getGyroValues( uint16_t *x, uint16_t *y, uint16_t *z );
 
   private:
     bool                isValidRegister( uint8_t reg );
 
     void                init(void);
-    ERR_CODE            readPowerRegister(void);
+    ERR_CODE             readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
+    ERR_CODE            writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
+
     u_char              readSensorID(void);
+    ERR_CODE            readPowerRegister(void);
+    ERR_CODE            readTemperatureRegister( void );
+    ERR_CODE            readGyroRegisters( void );
+//    ERR_CODE            readAccelRegisters( void );
+//    ERR_CODE            readAllRegisters( void );
 
     const uint32_t      I2C_CLOCK_SPEED     = 400000;       // MPU6050 I2C address
     const uint8_t       I2C_BASE            = 0x68;         // MPU6050 I2C address
@@ -127,13 +125,28 @@ class mpu6050
         // 7 = Stop the clock
 
     // Raw temperature value
-    uint8_t             rawData[2]          = { 0 };        // Raw data from the sensor
+    uint8_t             tempRaw[2]          = { 0 };        // Raw data from the sensor
     float               temperature         = 0.0;          // Raw temperature value
 
-    // CLock 
-    float               RateRoll            = 0;
-    float               RatePitch           = 0;
-    float               RateYaw             = 0;
+    // Gyro values
+    int16_t             gyroRaw[3];
+    int16_t             GyroX               = 0; //RateRoll            = 0;
+    int16_t             GyroY               = 0; //RatePitch           = 0;
+    int16_t             GyroZ               = 0; //RateYaw             = 0;
 
+    // Accelerometer values
+    int16_t             accelRaw[3];
+    float               AccelX              = 0;
+    float               AccelY              = 0;
+    float               AccelZ              = 0;
+    float               AccelXOffset        = 0;
+    float               AccelYOffset        = 0;
+    float               AccelZOffset        = 0;
+    float               AccelXScale         = 0;
+    float               AccelYScale         = 0;
+    float               AccelZScale         = 0;
+    float               AccelXOffsetScale   = 0;
+    float               AccelYOffsetScale   = 0;
+    float               AccelZOffsetScale   = 0;
 };
 
