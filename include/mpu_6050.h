@@ -41,6 +41,7 @@ class mpu6050
         MPU6050_INVALID_POINTER,
         MPU6050_INVALID_SIZE,
         MPU6050_TEMP_DISABLED,
+        MPU6050_INVALID_TEMP_STATE,
         MPU6050_I2C_ERROR,
         MPU6050_I2C_READ,
         MPU6050_I2C_WRITE,
@@ -49,8 +50,8 @@ class mpu6050
 
     typedef enum  {
         POWER_FAILED = -1,
-        POWER_SLEEP,
         POWER_WAKE,
+        POWER_SLEEP,
         MAX_POWER_STATE
     } POWER_STATE;
 
@@ -60,6 +61,7 @@ class mpu6050
         TEMPERATURE_ENABLE,
         MAX_TEMPERATURE_STATE
     } TEMPERATURE_STATE;
+
 
     mpu6050( uint8_t ado = 0 );     // Constructor
     ~mpu6050();                     // Destructor
@@ -84,6 +86,7 @@ class mpu6050
     TEMPERATURE_STATE   getTempState( void );
     ERR_CODE            setTempState(TEMPERATURE_STATE state);
     // Read the Temperature
+    ERR_CODE            readTemperatureRegister( void );
     ERR_CODE            getTemperature( uint16_t *temp );
 
 //        void gyroSignals(void);
@@ -107,14 +110,27 @@ class mpu6050
 
     uint8_t             addressI2C          = 0xff;         // Computed Address
     u_char              sensorID            = 0xff;         // ID of this sensor (Who-Am-I)
-    u_char              powerReg            = 0xff;         // ID of this sensor (Who-Am-I)
+
+    // Components of the Power Management 1 register ( )
+    u_char              powerReg           =  0xff ;     // Store Power management register #1
     POWER_STATE         powerState          = POWER_FAILED; // Power management register #1
+    TEMPERATURE_STATE   temperatureState    = TEMPERATURE_DISABLE; // Temperature state
+    float               lastTemperature     = 0;            // Most recent temperature reading
+    uint8_t             clockSource         = 0;            // Clock source
+        // 0 (default) = Internal 8MHz oscillator
+        // 1 = PLL with x-axis gyroscope reference
+        // 2 = PLL with y-axis gyroscope reference
+        // 3 = PLL with z-axis gyroscope reference
+        // 4 = PLL with external 32.768kHz reference
+        // 5 = PLL with external 19.2MHz reference
+        // 6 = PLL with external 48MHz reference
+        // 7 = Stop the clock
 
     // Raw temperature value
     uint8_t             rawData[2]          = { 0 };        // Raw data from the sensor
     float               temperature         = 0.0;          // Raw temperature value
-    TEMPERATURE_STATE   temperatureState    = TEMPERATURE_DISABLE; // Temperature state
 
+    // CLock 
     float               RateRoll            = 0;
     float               RatePitch           = 0;
     float               RateYaw             = 0;

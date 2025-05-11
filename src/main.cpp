@@ -29,7 +29,7 @@ void setup()
   delay(1000);
 
   mySensor->setPowerState( mpu6050::POWER_WAKE );
-  delay(1000);
+ // delay(1000);
 
   Serial.printf( "    * Sensor ID: %#x \n",  mySensor->getSensorID() );
 
