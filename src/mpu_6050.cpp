@@ -492,8 +492,9 @@ mpu6050::setTempState(TEMPERATURE_STATE newState )
 mpu6050::ERR_CODE
 mpu6050::getTemperature( uint16_t *temp )
 {
-    ERR_CODE retVal = MPU6050_SUCCESS;
-    return retVal;
+    return readTemperatureRegister();
+    // ERR_CODE retVal = MPU6050_SUCCESS;
+    // return retVal;
 }
 
 
@@ -505,31 +506,47 @@ mpu6050::readTemperatureRegister( void )
 {
     ERR_CODE retVal = MPU6050_SUCCESS;
 
-    if( MPU6050_SUCCESS != ( retVal =readPowerRegister() ) )
-    { // Read failed
-        Serial.printf( "ERROR: MPU6050 getTemperature failed with error [%d]\n", retVal );
-        retVal = MPU6050_ERROR;
-    }
-    else if ( POWER_WAKE != powerState )
+    if ( POWER_WAKE != powerState )
     { // Device is not in the correct state
-        Serial.printf( "ERROR: MPU6050 getTemperature sensor power state is %s\n"
+        Serial.printf( "ERROR: MPU6050 readTemperature sensor power state is %s\n"
                        , POWER_STRING( powerState)
                      );
         retVal = MPU6050_ERROR;
     }
     else if ( TEMPERATURE_ENABLE != temperatureState )
     { // Temperature sensor is not enabled
-        Serial.printf( "ERROR: MPU6050 getTemperature temperature state %s, not enabled\n"
+        Serial.printf( "ERROR: MPU6050 readTemperature temperature state %s, not enabled\n"
                        ,TEMPERATURE_STRING( temperatureState )
                      );
         retVal = MPU6050_TEMP_DISABLED;
     }
     else
-    { // Read was successful and sensor is powered
-        lastTemperature = ( lastTemperature / 340 ) + 36.53; // Convert to degrees C
-        Serial.printf( " INFO: MPU6050 getTemperature -- Temp: %f\n"
-                       , lastTemperature
-                     );
+    { // Power and temperature are enabled
+        // Read the temperature registers
+        uint16_t rawData[2] = { 0, 0 };
+
+        if( MPU6050_SUCCESS != ( retVal = readI2cRegisters( (uint8_t)TEMP_H_OUT, (uint8_t *)&rawData[2], (uint8_t)1 ) ) )
+        { // Read failed
+            Serial.printf( "ERROR: MPU6050 readTemperature Hi readI2cRegisters failed with error [%d]\n", retVal );
+            temperatureState = TEMPERATURE_FAILED; // Set to invalid value
+        }
+        else if( MPU6050_SUCCESS != (retVal = readI2cRegisters( (uint8_t)TEMP_L_OUT, (uint8_t *)&rawData[0], (uint8_t)1 ) ) )
+        { // Read failed
+            Serial.printf( "ERROR: MPU6050 readTemperature Lo failed with error [%d]\n", retVal );
+            retVal = MPU6050_I2C_READ; // Set to invalid value
+        }
+        else
+        { // Reads were successful
+            Serial.printf( " INFO: MPU6050 readTemperature -- read registers (%02#x:%02#x)\n"
+                           , rawData[0], rawData[1]
+                         );
+ 
+            lastTemperature = ( lastTemperature / 340 ) + 36.53; // Convert to degrees C
+            Serial.printf( " INFO: MPU6050 readTemperature -- Temp: %f\n"
+                        , lastTemperature
+                        );
+        }
+
     }
 
     return retVal;
