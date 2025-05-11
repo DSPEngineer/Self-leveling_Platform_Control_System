@@ -87,8 +87,11 @@ void loop()
   else
   {
     servo.setAngle( motorAngle );
-    Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
-                    , (uint16_t)gx, (uint16_t)gy, (uint16_t)gz
+    // Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
+    //                 , (int16_t)gx, (int16_t)gy, (uint16_t)gz
+    //              );
+    Serial.printf( "LOOP: BEE-526 - GyroX: %f,GyroY: %f,GyroZ: %f  \n"
+                    , (float)gx, (float)gy, (float)gz
                  );
     delay(125);
   }
