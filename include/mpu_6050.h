@@ -83,10 +83,13 @@ class mpu6050
     TEMPERATURE_STATE   getTempState( void );
     ERR_CODE            setTempState(TEMPERATURE_STATE state);
     // Read the Temperature value
-    ERR_CODE            getTemperature( uint16_t *temp );
+    ERR_CODE            getTemperature( float *temp );
 
     // Read the Gyro values
-    ERR_CODE            getGyroValues( uint16_t *x, uint16_t *y, uint16_t *z );
+    ERR_CODE            getGyroValues( float *x, float *y, float *z );
+
+    // Read the Gyro values
+    ERR_CODE            getAccelValues( float *x, float *y, float *z );
 
   private:
     bool                isValidRegister( uint8_t reg );
@@ -99,7 +102,7 @@ class mpu6050
     ERR_CODE            readPowerRegister(void);
     ERR_CODE            readTemperatureRegister( void );
     ERR_CODE            readGyroRegisters( void );
-//    ERR_CODE            readAccelRegisters( void );
+    ERR_CODE            readAccelRegisters( void );
 //    ERR_CODE            readAllRegisters( void );
 
     const uint32_t      I2C_CLOCK_SPEED     = 400000;       // MPU6050 I2C address
@@ -113,7 +116,6 @@ class mpu6050
     u_char              powerReg           =  0xff ;     // Store Power management register #1
     POWER_STATE         powerState          = POWER_FAILED; // Power management register #1
     TEMPERATURE_STATE   temperatureState    = TEMPERATURE_DISABLE; // Temperature state
-    float               lastTemperature     = 0;            // Most recent temperature reading
     uint8_t             clockSource         = 0;            // Clock source
         // 0 (default) = Internal 8MHz oscillator
         // 1 = PLL with x-axis gyroscope reference
@@ -125,20 +127,22 @@ class mpu6050
         // 7 = Stop the clock
 
     // Raw temperature value
-    uint8_t             tempRaw[2]          = { 0 };        // Raw data from the sensor
+//    uint8_t             tempRaw[2]          = { 0 };        // Raw data from the sensor
+    uint16_t            tempRaw             = 0;            // Raw data from the sensor
     float               temperature         = 0.0;          // Raw temperature value
 
     // Gyro values
     int16_t             gyroRaw[3];
-    int16_t             GyroX               = 0; //RateRoll            = 0;
-    int16_t             GyroY               = 0; //RatePitch           = 0;
-    int16_t             GyroZ               = 0; //RateYaw             = 0;
+    float               GyroX               = 0; //RateRoll            = 0;
+    float               GyroY               = 0; //RatePitch           = 0;
+    float               GyroZ               = 0; //RateYaw             = 0;
 
     // Accelerometer values
     int16_t             accelRaw[3];
     float               AccelX              = 0;
     float               AccelY              = 0;
     float               AccelZ              = 0;
+
     float               AccelXOffset        = 0;
     float               AccelYOffset        = 0;
     float               AccelZOffset        = 0;

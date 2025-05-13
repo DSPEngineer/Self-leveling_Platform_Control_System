@@ -54,8 +54,8 @@ uint16_t motorAngle = 90;
 
 void loop()
 {
-  uint16_t temp = -1;
-  
+  // Temp Values
+  float temp = -1;  
   mpu6050::ERR_CODE err = mySensor->getTemperature( &temp );
 
   if( mpu6050::MPU6050_SUCCESS != err )
@@ -66,19 +66,25 @@ void loop()
   else
   {
     servo.setAngle( motorAngle );
+#ifdef JDEBUG
     Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: [%s], Temp: [%f C, %f F] \n"
                    , motorAngle
                    , POWER_STRING(mySensor->getPowerState())
                    , ( (float)temp / 340 ) + 36.53
                    , ( ( (float)temp / 340 ) + 36.53 ) * 9.0 / 5.0 + 32
                  );
-    delay(125);
+#endif
+//    delay(125);
   }
 
-//  uint16_t gx, gy, gz;
-//  err = mySensor->getGyroValues( (uint16_t *)&gx, (uint16_t *)&gy, (uint16_t *)&gz );
-  uint16_t gx, gy, gz;
+  // Gyro Values
+  float gx, gy, gz;
   err = mySensor->getGyroValues( &gx, &gy, &gz );
+
+  // Accel Values
+  float ax, ay, az;
+  err = mySensor->getAccelValues( &ax, &ay, &az );
+
   if( mpu6050::MPU6050_SUCCESS != err )
   { // Read failed
     Serial.printf( "ERROR: MPU6050 getGyroValues failed with error [%d]\n", err );
@@ -90,10 +96,10 @@ void loop()
     // Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
     //                 , (int16_t)gx, (int16_t)gy, (uint16_t)gz
     //              );
-    Serial.printf( "LOOP: BEE-526 - GyroX: %f,GyroY: %f,GyroZ: %f  \n"
-                    , (float)gx, (float)gy, (float)gz
+    Serial.printf( "LOOP: BEE-526 - Temp: %f, GyroX: %f, GyroY: %f, GyroZ: %f, AccelX: %f, AccelY: %f, AccelZ: %f \n"
+                   , temp, (float)gx, (float)gy, (float)gz, (float)ax, (float)ay, (float)az
                  );
-    delay(125);
+//    delay(125);
   }
 
 
@@ -111,6 +117,9 @@ void loop()
     delay(10);
   }
   else
-    motorAngle += 1; //INCREMENT;    
+    motorAngle += 1; //INCREMENT;
+
+  delay(100);
+
 
 }
