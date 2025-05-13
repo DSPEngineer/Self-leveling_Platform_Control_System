@@ -426,22 +426,14 @@ mpu6050::setTempState(TEMPERATURE_STATE newState )
 
     if( ! isValidTemperatureState( newState ) )
     { // The current state matches the proposed (new) state
-        Serial.printf( " WARN: MPU6050 setTempState() -- invalid temperature state (%d)\n"
+        Serial.printf( " WARN: MPU6050 setTempState -- invalid temperature state (%d)\n"
                        ,newState
                     );
         retVal = MPU6050_INVALID_TEMP_STATE;
     }
-/*
-    else if( state == temperatureState )
-    { // The current state matches the proposed (new) state
-        Serial.printf( " WARN: MPU6050 setTempState() -- temperature state unchanged, (%s)\n"
-                       , TEMPERATURE_STRING( state )
-                    );
-    }
-*/
     else if( MPU6050_SUCCESS != ( retVal = readPowerRegister() ) )
     { // Read failed
-        Serial.printf( "ERROR: MPU6050 setTempState() failed to read power register with error [%d]\n", retVal );
+        Serial.printf( "ERROR: MPU6050 setTempState -- failed to read power register with error [%d]\n", retVal );
         temperatureState = TEMPERATURE_FAILED; // Set to invalid value
     }
     else
@@ -462,17 +454,17 @@ mpu6050::setTempState(TEMPERATURE_STATE newState )
             ,1 != Wire1.write( PWR_MGMT_1 )
           )
         { // the write failed to send one byte
-            Serial.printf( "ERROR: failed to select the MPU6050 power register\n" );
+            Serial.printf( "ERROR: setTempState -- failed to select the MPU6050 power register\n" );
             retVal = MPU6050_I2C_WRITE; // Set to invalid value
         }
         else if( 1 != Wire1.write( powerReg ) )
         { // the write failed to send one byte
-            Serial.printf( "ERROR: failed to set temperature state on the MPU6050\n" );
+            Serial.printf( "ERROR: setTempState -- failed to set temperature state on the MPU6050\n" );
             retVal = MPU6050_I2C_WRITE; // Set to invalid value
         }
         else
         {  // Write successfully sent temperature sensor offset
-            Serial.printf( " INFO: MPU6050 temperature state set to %s\n", TEMPERATURE_STRING( temperatureState ) );
+            Serial.printf( " INFO: MPU6050 setTempState -- state set to %s\n", TEMPERATURE_STRING( temperatureState ) );
             retVal = MPU6050_SUCCESS;
         }
 
@@ -481,14 +473,9 @@ mpu6050::setTempState(TEMPERATURE_STATE newState )
 
         if( 0 != cmdRet )
         { // Report if ending transmission fails
-            Serial.printf( "ERROR: MPU6050 sensorReset failed with error [%d]\n", retVal );
+            Serial.printf( "ERROR: MPU6050 setTempState -- call to endTransmission() failed with error [%d]\n", retVal );
             retVal = MPU6050_I2C_ERROR; // Set to invalid value
         }
-/*        else if ( MPU6050_SUCCESS != ( retVal = readTemperature() ) )
-        { // Read failed
-            Serial.printf( "ERROR: MPU6050 getTemperature() failed to read current value, error [%d]\n", retVal );
-        }
-*/
         else
         { // Read was successful
             temperatureState = newState;
@@ -527,9 +514,9 @@ mpu6050::getTemperature( float *temp )
     else
     { // Read was successful
         *temp = (float)( ( temperature / 340.0 ) + 36.53 ); // Convert to degrees C
-        //#ifdef JDEBUG
+        #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 getTemperature -- Temp: %f\n", *temp );
-        //#endif
+        #endif
     }
 
     return retVal;
@@ -570,15 +557,13 @@ mpu6050::readTemperatureRegister( void )
         }
         else
         { // Reads were successful
-//            temperature = (float)( (tempRaw[1] << 8 ) | ( tempRaw[0] & 0x00FF ) );
-//            temperature = (float)( ( ( tempRaw & 0x00FF ) << 8 ) |  ( (tempRaw & 0xFF00) >> 8) );
             temperature = (int16_t)( (readData[0] << 8) | readData[1] );
-            //#ifdef DEBUG
+            #ifdef DEBUG
             Serial.printf( " INFO: MPU6050 readTemperatureRegister -- read registers (%02#x:%02#x), Temp: [%f] \n"
                            , readData[0], readData[1], temperature
                          );
  
-            //#endif
+            #endif
         }
 
     }
@@ -606,9 +591,9 @@ mpu6050::getGyroValues( float *x, float *y, float *z )
     }
     else
     { // Read was successful
-        *x = (GyroX / 131.0 );
-        *y = (GyroY / 131.0 );
-        *z = (GyroZ / 131.0 );
+        *x = (float)(GyroX / 131.0 );
+        *y = (float)(GyroY / 131.0 );
+        *z = (float)(GyroZ / 131.0 );
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 getGyroValues -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
                        , (uint16_t)*x, (uint16_t)*y, (uint16_t)*z
@@ -635,10 +620,10 @@ mpu6050::readGyroRegisters( void )
     }
     else
     { // Read was successful
-        GyroX = ( (gyroRaw[0] >> 8) ) | ( (gyroRaw[0] & 0xFF) << 8 );
-        GyroY = ( (gyroRaw[1] >> 8) ) | ( (gyroRaw[1] & 0xFF) << 8 );
-        GyroZ = ( (gyroRaw[2] >> 8) ) | ( (gyroRaw[2] & 0xFF) << 8 );
-        
+        GyroX = (int16_t)( (gyroRaw[0] >> 8) | ( (gyroRaw[0] & 0xFF) << 8 ) );
+        GyroY = (int16_t)( (gyroRaw[1] >> 8) | ( (gyroRaw[1] & 0xFF) << 8 ) );
+        GyroZ = (int16_t)( (gyroRaw[2] >> 8) | ( (gyroRaw[2] & 0xFF) << 8 ) );
+
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 readGyroRegisters -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
                        , (uint16_t)GyroX, (uint16_t)GyroY, (uint16_t)GyroZ
@@ -670,9 +655,13 @@ mpu6050::mpu6050::getAccelValues( float *x, float *y, float *z )
     }
     else
     { // Read was successful
-        *x = ( AccelX / 16384.0);
-        *y = ( AccelY / 16384.0);
-        *z = ( AccelZ / 16384.0);
+        // *x = ( AccelX / 16384.0);
+        // *y = ( AccelY / 16384.0);
+        // *z = ( AccelZ / 16384.0);
+
+        *x = (float)( AccelX / 16384.0);
+        *y = (float)( AccelY / 16384.0);
+        *z = (float)( AccelZ / 16384.0);
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 getAccelValues -- AccelX: %04#x, AccelY: %04#x, AccelZ: %04#x\n"
                        , (float)*x, (float)*y, (float)*z
@@ -698,10 +687,10 @@ mpu6050::readAccelRegisters( void )
     }
     else
     { // Read was successful
-        AccelX =  ( (accelRaw[0] >> 8) ) | ( (accelRaw[0] & 0x00FF) << 8 );
-        AccelY =  ( (accelRaw[1] >> 8) ) | ( (accelRaw[1] & 0x00FF) << 8 );
-        AccelZ =  ( (accelRaw[2] >> 8) ) | ( (accelRaw[2] & 0x00FF) << 8 );
-
+       AccelX =  (int16_t)( (accelRaw[0] >> 8) | ( (accelRaw[0] & 0x00FF) << 8 ) );
+       AccelY =  (int16_t)( (accelRaw[1] >> 8) | ( (accelRaw[1] & 0x00FF) << 8 ) );
+       AccelZ =  (int16_t)( (accelRaw[2] >> 8) | ( (accelRaw[2] & 0x00FF) << 8 ) );
+  
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 readAccelRegisters -- AccelX: %04#x, AccelY: %04#x, AccelZ: %04#x \n"
                        , AccelX, AccelY, AccelZ
