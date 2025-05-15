@@ -10,6 +10,12 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#define  GYRO_REG_SIZE         6
+#define  ACCEL_REG_SIZE        6
+
+#define ACCEL_SCALE         16384.0
+#define GYRO_SCALE          131.0
+
 // Power Macros
 #define POWER_STRING( a )  \
     ( mpu6050::POWER_SLEEP == (a) ) ? "SLEEP" : \
@@ -95,6 +101,9 @@ class mpu6050
     bool                isValidRegister( uint8_t reg );
 
     void                init(void);
+    ERR_CODE            gyroCalibrate( void );
+    ERR_CODE            accelCalibrate( void );
+
     ERR_CODE             readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
     ERR_CODE            writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size);
 
@@ -127,30 +136,45 @@ class mpu6050
         // 7 = Stop the clock
 
     // Raw temperature value
-//    uint8_t             tempRaw[2]          = { 0 };        // Raw data from the sensor
-    uint16_t            tempRaw             = 0;            // Raw data from the sensor
-    float               temperature         = 0.0;          // Raw temperature value
+    uint16_t            tempRaw                     = 0;                // Raw data from the sensor
+    float               temperature                 = 0.0;              // Raw temperature value
 
     // Gyro values
-    int16_t             gyroRaw[3];
-    float               GyroX               = 0; //RateRoll            = 0;
-    float               GyroY               = 0; //RatePitch           = 0;
-    float               GyroZ               = 0; //RateYaw             = 0;
+    float               GyroSensitivity             = GYRO_SCALE;       // Scale factor for the gyro
+    int16_t             GyroSensitivityFS           = 0;                // Full scale range
+    uint8_t             gyroRaw[GYRO_REG_SIZE]      = { 0 };            // Raw data from the sensor
+    int16_t             GyroX                       = 0;
+    int16_t             GyroY                       = 0;
+    int16_t             GyroZ                       = 0;
+
+    float               GyroX_cal                   = 0;
+    float               GyroY_cal                   = 0;
+    float               GyroZ_cal                   = 0;
 
     // Accelerometer values
-    int16_t             accelRaw[3];
-    float               AccelX              = 0;
-    float               AccelY              = 0;
-    float               AccelZ              = 0;
+    float               AccelSensitivity            = ACCEL_SCALE;      // Scale factor for the accelerometer
+    uint8_t             AccelSensitivityFS          = 0;                // Full scale range
+    uint8_t             accelRaw[ACCEL_REG_SIZE]    = { 0 };            // Raw data from the sensor
+    int16_t             AccelX                      = 0;
+    int16_t             AccelY                      = 0;
+    int16_t             AccelZ                      = 0;
 
-    float               AccelXOffset        = 0;
-    float               AccelYOffset        = 0;
-    float               AccelZOffset        = 0;
-    float               AccelXScale         = 0;
-    float               AccelYScale         = 0;
-    float               AccelZScale         = 0;
-    float               AccelXOffsetScale   = 0;
-    float               AccelYOffsetScale   = 0;
-    float               AccelZOffsetScale   = 0;
+    float               AccelX_cal                  = 0;
+    float               AccelY_cal                  = 0;
+    float               AccelZ_cal                  = 0;
+
+    float               AccelX_err                  = 0;
+    float               AccelY_err                  = 0;
+    float               AccelZ_err                  = 0;
+
+    float               AccelXOffset                = 0;
+    float               AccelYOffset                = 0;
+    float               AccelZOffset                = 0;
+    float               AccelXScale                 = 0;
+    float               AccelYScale                 = 0;
+    float               AccelZScale                 = 0;
+    float               AccelXOffsetScale           = 0;
+    float               AccelYOffsetScale           = 0;
+    float               AccelZOffsetScale           = 0;
 };
 

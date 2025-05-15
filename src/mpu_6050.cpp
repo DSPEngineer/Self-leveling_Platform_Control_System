@@ -13,16 +13,16 @@
 #define  TEMP_H_OUT         0x41
 #define  TEMP_L_OUT         0x42
 #define  GYRO_REG_BASE      0x43
-#define  GYRO_REG_SIZE      6
 #define  ACCEL_REG_BASE     0x3B
-#define  ACCEL_REG_SIZE      6
 
 #define  PWR_RESET_BIT      0x80
 #define  PWR_SLEEP_BIT      0x40
 #define  TEMP_DISABLE_BIT   0x08
 #define  PWR_CLK_SEL_MASK   0x07
 
-#define SERIAL_BAUD_RATE  115200
+#define SERIAL_BAUD_RATE    115200
+
+#define ANGLE_CONVERSION    ( 180.0 / PI )
 
 #define isValidTemperatureState( a )  \
     (    ( mpu6050::TEMPERATURE_DISABLE == (a) ) \
@@ -591,12 +591,19 @@ mpu6050::getGyroValues( float *x, float *y, float *z )
     }
     else
     { // Read was successful
-        *x = (float)(GyroX / 131.0 );
-        *y = (float)(GyroY / 131.0 );
-        *z = (float)(GyroZ / 131.0 );
+        *x = ( GyroX / GyroSensitivity ) - GyroX_cal;
+        *y = ( GyroY / GyroSensitivity ) - GyroY_cal;
+        *z = ( GyroZ / GyroSensitivity ) - GyroZ_cal;
+
         #ifdef JDEBUG
-        Serial.printf( " INFO: MPU6050 getGyroValues -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
-                       , (uint16_t)*x, (uint16_t)*y, (uint16_t)*z
+        Serial.printf( " INFO: MPU6050 getGyroValues -- GyroX: %04#x ( %f/ %f = %f - %f )  %f  "
+                       , GyroX, (float)GyroX, GyroSensitivity, ( GyroX / GyroSensitivity ), GyroX_cal, *x
+                     );
+        Serial.printf( "GyroY: %04#x (%f)  "
+                       , (int16_t)*y, *y
+                     );
+        Serial.printf( " GyroZ: %04#x (%f)\n"
+                       , (int16_t)*z, *z
                      );
         #endif
     }
@@ -619,19 +626,19 @@ mpu6050::readGyroRegisters( void )
         Serial.printf( "ERROR: MPU6050 readGyroRegisters failed with error [%d]\n", retVal );
     }
     else
-    { // Read was successful
-        GyroX = (int16_t)( (gyroRaw[0] >> 8) | ( (gyroRaw[0] & 0xFF) << 8 ) );
-        GyroY = (int16_t)( (gyroRaw[1] >> 8) | ( (gyroRaw[1] & 0xFF) << 8 ) );
-        GyroZ = (int16_t)( (gyroRaw[2] >> 8) | ( (gyroRaw[2] & 0xFF) << 8 ) );
+    { // Read was successful, swap the bytes
+        GyroX = (int16_t)( ( gyroRaw[0] << 8 ) | gyroRaw[1] );
+        GyroY = (int16_t)( ( gyroRaw[2] << 8 ) | gyroRaw[3] );
+        GyroZ = (int16_t)( ( gyroRaw[4] << 8 ) | gyroRaw[5] );
 
         #ifdef JDEBUG
-        Serial.printf( " INFO: MPU6050 readGyroRegisters -- GyroX: %04#x, GyroY: %04#x, GyroZ: %04#x\n"
-                       , (uint16_t)GyroX, (uint16_t)GyroY, (uint16_t)GyroZ
+        Serial.printf( " INFO: MPU6050 readGyroRegisters -- GyroX=%04#x (%d),  GyroY=%04#x (%d),  GyroZ=%04#x (%d)\n"
+                       , (uint16_t)GyroX, GyroX, (uint16_t)GyroY, GyroY, (uint16_t)GyroZ, GyroZ
                      );
         #endif
     }
-    return retVal;
 
+    return retVal;
 }
 
 
@@ -639,7 +646,6 @@ mpu6050::readGyroRegisters( void )
 **
 ************************************************************************/
 mpu6050::ERR_CODE
-//mpu6050::getAccelValues( uint16_t *x, uint16_t *y, uint16_t *z )
 mpu6050::mpu6050::getAccelValues( float *x, float *y, float *z )
 {
     ERR_CODE retVal = MPU6050_ERROR;
@@ -655,13 +661,12 @@ mpu6050::mpu6050::getAccelValues( float *x, float *y, float *z )
     }
     else
     { // Read was successful
-        // *x = ( AccelX / 16384.0);
-        // *y = ( AccelY / 16384.0);
-        // *z = ( AccelZ / 16384.0);
-
-        *x = (float)( AccelX / 16384.0);
-        *y = (float)( AccelY / 16384.0);
-        *z = (float)( AccelZ / 16384.0);
+        // *x = ( ( AccelX - AccelX_cal ) / AccelSensitivity );
+        // *y = ( ( AccelY - AccelY_cal ) / AccelSensitivity );
+        // *z = ( ( AccelZ              ) / AccelSensitivity );
+        *x = ( AccelX / AccelSensitivity ) - AccelX_cal;
+        *y = ( AccelY / AccelSensitivity ) - AccelY_cal;
+        *z = ( AccelZ / AccelSensitivity );
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 getAccelValues -- AccelX: %04#x, AccelY: %04#x, AccelZ: %04#x\n"
                        , (float)*x, (float)*y, (float)*z
@@ -686,10 +691,10 @@ mpu6050::readAccelRegisters( void )
         Serial.printf( "ERROR: MPU6050 readAccelRegisters failed with error [%d]\n", retVal );
     }
     else
-    { // Read was successful
-       AccelX =  (int16_t)( (accelRaw[0] >> 8) | ( (accelRaw[0] & 0x00FF) << 8 ) );
-       AccelY =  (int16_t)( (accelRaw[1] >> 8) | ( (accelRaw[1] & 0x00FF) << 8 ) );
-       AccelZ =  (int16_t)( (accelRaw[2] >> 8) | ( (accelRaw[2] & 0x00FF) << 8 ) );
+    { // Read was successful, swap the bytes
+       AccelX =  (int16_t)( (accelRaw[0] << 8) | accelRaw[1] );
+       AccelY =  (int16_t)( (accelRaw[2] << 8) | accelRaw[3] );
+       AccelZ =  (int16_t)( (accelRaw[4] << 8) | accelRaw[5] );
   
         #ifdef JDEBUG
         Serial.printf( " INFO: MPU6050 readAccelRegisters -- AccelX: %04#x, AccelY: %04#x, AccelZ: %04#x \n"
@@ -700,6 +705,7 @@ mpu6050::readAccelRegisters( void )
     return retVal;
 
 }
+
 
 /***********************************************************************
 **
@@ -743,6 +749,142 @@ mpu6050::sensorReset( void )
     }
 
     return retVal;
+}
+
+
+/***********************************************************************
+** Function to calibrate the Accelerometers on the MPU6050 sensor board
+************************************************************************/
+#define ACCEL_CAL_COUNT     1050
+
+mpu6050::ERR_CODE
+mpu6050::accelCalibrate( void )
+{  // Accel Values
+  ERR_CODE retVal = MPU6050_SUCCESS;
+
+  int32_t AccelX_sum = 0;
+  int32_t AccelY_sum = 0;
+  int32_t AccelZ_sum = 0;
+
+  // Gyro Calibration
+  Serial.printf( " INFO: MPU6050 Accelerometer Calibration ." );
+  unsigned long prevTime = millis();
+
+  // Read accelerometer values 200 times
+  for( int c=0; c < ACCEL_CAL_COUNT; c++ )
+  {  // read a number of values and take the average
+    if(c % 125 == 0)
+    {
+        Serial.printf(".");             //Print a dot on the LCD every 125 readings
+    }
+
+    readAccelRegisters( );              // Read the accelerometer registers
+    // Sum all readings
+    AccelX_sum +=  AccelX;
+    AccelY_sum +=  AccelY;
+    AccelZ_sum +=  AccelZ;
+    // AccelX_sum +=  AccelX / AccelSensitivity;
+    // AccelY_sum +=  AccelY / AccelSensitivity;
+    // AccelZ_sum +=  AccelZ / AccelSensitivity;
+
+    delay(3);                                         //Delay 3us to simulate the 250Hz program loop
+  }
+
+  //Divide each sum by ACCEL_CAL_COUNT to get the average
+  AccelX_sum /= ACCEL_CAL_COUNT;
+  AccelY_sum /= ACCEL_CAL_COUNT;
+  AccelZ_sum /= ACCEL_CAL_COUNT;
+
+  AccelX_cal = (float)( AccelX_sum / AccelSensitivity ); // Divide the sum by 2000 to get the average offset
+  AccelY_cal = (float)( AccelY_sum / AccelSensitivity ); // Divide the sum by 2000 to get the average offset
+  AccelZ_cal = (float)( AccelZ_sum / AccelSensitivity ); // Divide the sum by 2000 to get the average offset
+
+  AccelX_err +=  ANGLE_CONVERSION * atan(      (AccelY_cal) / sqrt( pow( (AccelX_cal), 2) + pow((AccelZ_cal), 2) ) );
+  AccelY_err +=  ANGLE_CONVERSION * atan( -1 * (AccelX_cal) / sqrt( pow( (AccelY_cal), 2) + pow((AccelZ_cal), 2) ) );
+//  AccErrorX = AccErrorX + ((atan((AccY) / sqrt(pow((AccX), 2) + pow((AccZ), 2))) * 180 / PI));
+//  AccErrorY = AccErrorY + ((atan(-1 * (AccX) / sqrt(pow((AccY), 2) + pow((AccZ), 2))) * 180 / PI));
+
+  unsigned long elapsedTime = ( millis() - prevTime );
+
+  Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Accel Calibration -- AccelX_cal: %f, AccelY_cal: %f, AccelZ_cal: %f\n"
+                 ,elapsedTime ,elapsedTime/1000.0, AccelX_cal, AccelY_cal, AccelZ_cal
+               );
+
+  return retVal;
+}
+
+
+/***********************************************************************
+** Function to calibrate the Gyros on the MPU6050 sensor board
+************************************************************************/
+#define GYRO_CAL_COUNT  1050
+
+mpu6050::ERR_CODE
+mpu6050::gyroCalibrate( void )
+{  // Gyro Values
+  ERR_CODE retVal = MPU6050_SUCCESS;
+
+  // Gyro Calibration
+  Serial.printf( " INFO: MPU6050 Gyro Calibration ." );
+  unsigned long prevTime = millis();
+
+  int32_t gyroX_sum = 0;
+  int32_t gyroY_sum = 0;
+  int32_t gyroZ_sum = 0;
+
+  for (int cal_int = 0; cal_int < GYRO_CAL_COUNT ; cal_int ++)
+  {  // read a number of values and take the average
+      if(cal_int % 125 == 0)
+      {
+        Serial.printf(".");                 //Print a dot on the LCD every 125 readings
+      }
+
+      retVal = readGyroRegisters( );
+      gyroX_sum += GyroX;                   //Sum all X readings
+      gyroY_sum += GyroY;                   //Sum all Y readings
+      gyroZ_sum += GyroZ;                   //Sum all Z readings
+
+    //   GyroX_cal += ( GyroX / GyroSensitivity );      //Add the gyro x-axis offset to the gyro_x_cal variable
+    //   GyroY_cal += ( GyroY / GyroSensitivity );      //Add the gyro y-axis offset to the gyro_y_cal variable
+    //   GyroZ_cal += ( GyroZ / GyroSensitivity );      //Add the gyro z-axis offset to the gyro_z_cal variable
+
+      delay(3);                                         //Delay 3us to simulate the 250Hz program loop
+  }
+
+  unsigned long elapsedTime = ( millis() - prevTime );
+
+  Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Gyro Calibration -- SUM:  X: %#x, Y: %#x, Z: %#x \n"
+                 , elapsedTime, (elapsedTime / 1000.0 ), gyroX_sum, gyroY_sum, gyroZ_sum
+               );
+
+
+  gyroX_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_x_cal variable by 2000 to get the avarage offset
+  gyroY_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_y_cal variable by 2000 to get the avarage offset
+  gyroZ_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_z_cal variable by 2000 to get the avarage offset
+
+  Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Gyro Calibration -- AVG:  X: %#x (%f) Y: %#x (%f), Z: %#x (%f) \n"
+                 , elapsedTime, (elapsedTime / 1000.0 )
+                 , gyroX_sum, (float)gyroX_sum
+                 , gyroY_sum, (float)gyroY_sum
+                 , gyroZ_sum, (float)gyroZ_sum
+               );
+
+  GyroX_cal = (float)(gyroX_sum / GyroSensitivity );               //Divide the gyro_x_cal variable by 2000 to get the avarage offset
+  GyroY_cal = (float)(gyroY_sum / GyroSensitivity );               //Divide the gyro_y_cal variable by 2000 to get the avarage offset
+  GyroZ_cal = (float)(gyroZ_sum / GyroSensitivity );               //Divide the gyro_z_cal variable by 2000 to get the avarage offset
+
+//   GyroX_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_x_cal variable by 2000 to get the avarage offset
+//   GyroY_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_y_cal variable by 2000 to get the avarage offset
+//   GyroZ_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_z_cal variable by 2000 to get the avarage offset
+
+
+  Serial.printf( " INFO: MPU6050 Gyro Calibration -- CAL:  X=%#x (%f), Y=%#x (%f), Z=%#x (%f) \n"
+                 , (int32_t)( gyroX_sum / (int32_t)GyroSensitivity ), GyroX_cal
+                 , (int32_t)( gyroY_sum / (int32_t)GyroSensitivity ), GyroY_cal
+                 , (int32_t)( gyroZ_sum / (int32_t)GyroSensitivity ), GyroZ_cal
+               );
+
+  return retVal;
 }
 
 
@@ -799,16 +941,62 @@ mpu6050::init( void )
     }
 
 
-    // Setting the Filter
-    // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
-    // Wire1.write(0x1A); // Starting with register 0x1A (Low Pass FIlter)
-    // Wire1.write(0x05); // Set the low pass filter to 10Hz
-    // Wire1.endTransmission();
-  
-    // // Sensitivity scale factor for Gyroscope:
-    // Wire1.beginTransmission( I2C_CHANNEL ); // MPU6050 I2C address
-    // Wire1.write(0x1B); // Starting with register 0x1B (Sensitivity scale factor)
-    // Wire1.write(0x08); // Set the scale factor bits [3:4], value=1 ( +/- 500 deg/sec )
-    // Wire1.endTransmission();
-  
+    // Set Gyro Sensitivity
+    #define GYRO_FS_SEL         0x03 // +/- 2000 degrees/sec
+    #define GYRO_CONFIG         0x1B // Gyro Configuration Register 
+    #define GYRO_CONFIG_SIZE       1 // Gyro Configuration Register size 
+
+    GyroSensitivity /= pow( 2, GYRO_FS_SEL );
+    if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)GYRO_CONFIG, (uint8_t *)&GyroSensitivityFS, (uint8_t)GYRO_CONFIG_SIZE ) )
+    { // Read failed
+        Serial.printf( "ERROR: MPU6050 Init: failed to read gyro sensitivity\n" );
+        GyroSensitivity = GYRO_SCALE;
+        GyroSensitivityFS = 0;
+    }
+    else if( GyroSensitivityFS = GYRO_FS_SEL << 3,  // Set to +/- 16g
+             MPU6050_SUCCESS != writeI2cRegisters( (uint8_t)GYRO_CONFIG, (uint8_t *)&GyroSensitivityFS, (uint8_t)GYRO_CONFIG_SIZE )
+           )
+    { // Write failed
+        Serial.printf( "ERROR: MPU6050 Init: failed to set gyro sensitivity\n" );
+        GyroSensitivity = GYRO_SCALE;
+        GyroSensitivityFS = 0;
+    }
+    else
+    { // Write was successful
+        Serial.printf( " INFO: MPU6050 Init: Gyro Sensitivity: %f, FS_SEL: %#x, REG: %02#x\n"
+                       , GyroSensitivity, GYRO_FS_SEL, GyroSensitivityFS
+                     );
+    }
+
+
+    // Set Accel Sensitivity
+    #define ACCEL_FS_SEL         0x00 // +/- 2000 degrees/sec
+    #define ACCEL_CONFIG         0x1C // Gyro Configuration Register 
+    #define ACCEL_CONFIG_SIZE       1 // Gyro Configuration Register size
+
+    AccelSensitivity /= pow( 2, ACCEL_FS_SEL );
+    if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)ACCEL_CONFIG, (uint8_t *)&AccelSensitivityFS, (uint8_t)ACCEL_CONFIG_SIZE ) )
+    { // Read failed
+        Serial.printf( "ERROR: MPU6050 Init: failed to read accelerometer sensitivity\n" );
+        AccelSensitivity = ACCEL_SCALE;
+        AccelSensitivityFS = 0;
+    }
+    else if( AccelSensitivityFS = ACCEL_FS_SEL << 3,
+             MPU6050_SUCCESS != writeI2cRegisters( (uint8_t)ACCEL_CONFIG, (uint8_t *)&AccelSensitivityFS, (uint8_t)ACCEL_CONFIG_SIZE )
+           )
+    { // Write failed
+        Serial.printf( "ERROR: MPU6050 Init: failed to set accelerometer sensitivity\n" );
+        AccelSensitivity = ACCEL_SCALE;
+        AccelSensitivityFS = 0;
+    }
+    else
+    { // Write was successful
+        Serial.printf( " INFO: MPU6050 Init: Accel Sensitivity: %f, FS_SEL: %#x, REG: %02#x\n"
+                    , AccelSensitivity, ACCEL_FS_SEL, AccelSensitivityFS
+                    );
+    }
+
+    gyroCalibrate( );
+    accelCalibrate( );
+
 }
