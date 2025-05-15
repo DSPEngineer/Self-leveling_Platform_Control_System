@@ -661,9 +661,6 @@ mpu6050::mpu6050::getAccelValues( float *x, float *y, float *z )
     }
     else
     { // Read was successful
-        // *x = ( ( AccelX - AccelX_cal ) / AccelSensitivity );
-        // *y = ( ( AccelY - AccelY_cal ) / AccelSensitivity );
-        // *z = ( ( AccelZ              ) / AccelSensitivity );
         *x = ( AccelX / AccelSensitivity ) - AccelX_cal;
         *y = ( AccelY / AccelSensitivity ) - AccelY_cal;
         *z = ( AccelZ / AccelSensitivity );
@@ -783,9 +780,6 @@ mpu6050::accelCalibrate( void )
     AccelX_sum +=  AccelX;
     AccelY_sum +=  AccelY;
     AccelZ_sum +=  AccelZ;
-    // AccelX_sum +=  AccelX / AccelSensitivity;
-    // AccelY_sum +=  AccelY / AccelSensitivity;
-    // AccelZ_sum +=  AccelZ / AccelSensitivity;
 
     delay(3);                                         //Delay 3us to simulate the 250Hz program loop
   }
@@ -844,23 +838,18 @@ mpu6050::gyroCalibrate( void )
       gyroY_sum += GyroY;                   //Sum all Y readings
       gyroZ_sum += GyroZ;                   //Sum all Z readings
 
-    //   GyroX_cal += ( GyroX / GyroSensitivity );      //Add the gyro x-axis offset to the gyro_x_cal variable
-    //   GyroY_cal += ( GyroY / GyroSensitivity );      //Add the gyro y-axis offset to the gyro_y_cal variable
-    //   GyroZ_cal += ( GyroZ / GyroSensitivity );      //Add the gyro z-axis offset to the gyro_z_cal variable
-
-      delay(3);                                         //Delay 3us to simulate the 250Hz program loop
+      delay(3);                             //Delay 3us to simulate the 250Hz program loop
   }
 
   unsigned long elapsedTime = ( millis() - prevTime );
 
-  Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Gyro Calibration -- SUM:  X: %#x, Y: %#x, Z: %#x \n"
+  Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Gyro Calibration -- SUM:  X=%#x,  Y=%#x,  Z=%#x \n"
                  , elapsedTime, (elapsedTime / 1000.0 ), gyroX_sum, gyroY_sum, gyroZ_sum
                );
 
-
-  gyroX_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_x_cal variable by 2000 to get the avarage offset
-  gyroY_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_y_cal variable by 2000 to get the avarage offset
-  gyroZ_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_z_cal variable by 2000 to get the avarage offset
+  gyroX_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_x_cal variable by count to get the avarage offset
+  gyroY_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_y_cal variable by count to get the avarage offset
+  gyroZ_sum /= GYRO_CAL_COUNT;                  //Divide the gyro_z_cal variable by count to get the avarage offset
 
   Serial.printf( "   Time: (%u [ms]) %f [s]\n INFO: MPU6050 Gyro Calibration -- AVG:  X: %#x (%f) Y: %#x (%f), Z: %#x (%f) \n"
                  , elapsedTime, (elapsedTime / 1000.0 )
@@ -869,19 +858,14 @@ mpu6050::gyroCalibrate( void )
                  , gyroZ_sum, (float)gyroZ_sum
                );
 
-  GyroX_cal = (float)(gyroX_sum / GyroSensitivity );               //Divide the gyro_x_cal variable by 2000 to get the avarage offset
-  GyroY_cal = (float)(gyroY_sum / GyroSensitivity );               //Divide the gyro_y_cal variable by 2000 to get the avarage offset
-  GyroZ_cal = (float)(gyroZ_sum / GyroSensitivity );               //Divide the gyro_z_cal variable by 2000 to get the avarage offset
-
-//   GyroX_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_x_cal variable by 2000 to get the avarage offset
-//   GyroY_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_y_cal variable by 2000 to get the avarage offset
-//   GyroZ_cal /= GYRO_CAL_COUNT;                  //Divide the gyro_z_cal variable by 2000 to get the avarage offset
-
+  GyroX_cal = (float)( gyroX_sum / GyroSensitivity );               //Divide the gyro_x_cal variable by 2000 to get the avarage offset
+  GyroY_cal = (float)( gyroY_sum / GyroSensitivity );               //Divide the gyro_y_cal variable by 2000 to get the avarage offset
+  GyroZ_cal = (float)( gyroZ_sum / GyroSensitivity );               //Divide the gyro_z_cal variable by 2000 to get the avarage offset
 
   Serial.printf( " INFO: MPU6050 Gyro Calibration -- CAL:  X=%#x (%f), Y=%#x (%f), Z=%#x (%f) \n"
-                 , (int32_t)( gyroX_sum / (int32_t)GyroSensitivity ), GyroX_cal
-                 , (int32_t)( gyroY_sum / (int32_t)GyroSensitivity ), GyroY_cal
-                 , (int32_t)( gyroZ_sum / (int32_t)GyroSensitivity ), GyroZ_cal
+                 , (int32_t)( gyroX_sum / GyroSensitivity ), GyroX_cal
+                 , (int32_t)( gyroY_sum / GyroSensitivity ), GyroY_cal
+                 , (int32_t)( gyroZ_sum / GyroSensitivity ), GyroZ_cal
                );
 
   return retVal;
@@ -942,7 +926,7 @@ mpu6050::init( void )
 
 
     // Set Gyro Sensitivity
-    #define GYRO_FS_SEL         0x03 // +/- 2000 degrees/sec
+    #define GYRO_FS_SEL         0x00 // +/- 2000 degrees/sec
     #define GYRO_CONFIG         0x1B // Gyro Configuration Register 
     #define GYRO_CONFIG_SIZE       1 // Gyro Configuration Register size 
 
@@ -970,7 +954,7 @@ mpu6050::init( void )
 
 
     // Set Accel Sensitivity
-    #define ACCEL_FS_SEL         0x00 // +/- 2000 degrees/sec
+    #define ACCEL_FS_SEL         0x00 // 0=250, 1=500, 2=1000, 3=2000  scale in +/- [degrees/sec]
     #define ACCEL_CONFIG         0x1C // Gyro Configuration Register 
     #define ACCEL_CONFIG_SIZE       1 // Gyro Configuration Register size
 
