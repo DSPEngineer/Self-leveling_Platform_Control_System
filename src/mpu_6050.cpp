@@ -118,7 +118,7 @@ mpu6050::isValidRegister( uint8_t reg )
 mpu6050::ERR_CODE
 mpu6050::readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size )
 {
-    ERR_CODE retCode = MPU6050_ERROR;
+    ERR_CODE retCode = MPU6050_SUCCESS;
     uint8_t i2cErr = 0;
     uint8_t i2cReadSize = 0;
 
@@ -161,11 +161,13 @@ mpu6050::readI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size )
         Serial.printf( "ERROR: MPU6050 readI2cRegisters: request read failed with error (%d)\n", i2cReadSize );
         retCode = MPU6050_I2C_ERROR;
     }
+/*
     else if( 0 == i2cReadSize )
     { // No data was read
         Serial.printf( "ERROR: MPU6050 readI2cRegisters: no data read\n" );
         retCode = MPU6050_I2C_READ;
     }
+*/
     else if( i2cReadSize != size )
     { // Requested size is wrong
         Serial.printf( "ERROR: MPU6050 readI2cRegisters: read size mismatch (%d != %d)\n", i2cReadSize, size );
@@ -235,6 +237,16 @@ mpu6050::writeI2cRegisters( uint8_t reg, uint8_t *data, uint8_t size )
         { // Writing data failed
             Serial.printf( "ERROR: MPU6050 write register(s) failed \n" );
             retCode = MPU6050_I2C_WRITE;
+        }
+        else
+        { // Write was successful
+            #ifndef JDEBUG
+            Serial.printf( " INFO: MPU6050 writeI2cRegisters: wrote register(s): %#x, data, %#x, size: %d\n"
+                           , reg
+                           , data[0]
+                           , size
+                         );
+            #endif
         }
 
         { // Always end an I2C transmission
@@ -741,6 +753,10 @@ mpu6050::sensorReset( void )
                 Serial.printf( "ERROR: MPU6050 sensorReset failed with error [%d]\n", retVal );
                 retVal = MPU6050_I2C_ERROR; // Set to invalid value
             }
+            else
+            { // Read was successful
+                init(); // Reinitialize and calibrate the sensor
+            }
         }
 
     }
@@ -926,7 +942,7 @@ mpu6050::init( void )
 
 
     // Set Gyro Sensitivity
-    #define GYRO_FS_SEL         0x00 // +/- 2000 degrees/sec
+    #define GYRO_FS_SEL         0x00 // 0=250, 1=500, 2=1000, 3=2000  scale in: +/- [degrees/sec]
     #define GYRO_CONFIG         0x1B // Gyro Configuration Register 
     #define GYRO_CONFIG_SIZE       1 // Gyro Configuration Register size 
 
@@ -934,15 +950,15 @@ mpu6050::init( void )
     if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)GYRO_CONFIG, (uint8_t *)&GyroSensitivityFS, (uint8_t)GYRO_CONFIG_SIZE ) )
     { // Read failed
         Serial.printf( "ERROR: MPU6050 Init: failed to read gyro sensitivity\n" );
-        GyroSensitivity = GYRO_SCALE;
+        GyroSensitivity = GYRO_SENSITIVITY;
         GyroSensitivityFS = 0;
     }
-    else if( GyroSensitivityFS = GYRO_FS_SEL << 3,  // Set to +/- 16g
+    else if( GyroSensitivityFS |= (GYRO_FS_SEL << 3),  // Set to +/- 16g
              MPU6050_SUCCESS != writeI2cRegisters( (uint8_t)GYRO_CONFIG, (uint8_t *)&GyroSensitivityFS, (uint8_t)GYRO_CONFIG_SIZE )
            )
     { // Write failed
         Serial.printf( "ERROR: MPU6050 Init: failed to set gyro sensitivity\n" );
-        GyroSensitivity = GYRO_SCALE;
+        GyroSensitivity = GYRO_SENSITIVITY;
         GyroSensitivityFS = 0;
     }
     else
@@ -954,7 +970,7 @@ mpu6050::init( void )
 
 
     // Set Accel Sensitivity
-    #define ACCEL_FS_SEL         0x00 // 0=250, 1=500, 2=1000, 3=2000  scale in +/- [degrees/sec]
+    #define ACCEL_FS_SEL         0x02 // 0=2g, 1=4g, 2=8g, 3=16g  range: +/- [ g ]
     #define ACCEL_CONFIG         0x1C // Gyro Configuration Register 
     #define ACCEL_CONFIG_SIZE       1 // Gyro Configuration Register size
 
@@ -962,15 +978,15 @@ mpu6050::init( void )
     if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)ACCEL_CONFIG, (uint8_t *)&AccelSensitivityFS, (uint8_t)ACCEL_CONFIG_SIZE ) )
     { // Read failed
         Serial.printf( "ERROR: MPU6050 Init: failed to read accelerometer sensitivity\n" );
-        AccelSensitivity = ACCEL_SCALE;
+        AccelSensitivity = ACCEL_SENSITIVITY;
         AccelSensitivityFS = 0;
     }
-    else if( AccelSensitivityFS = ACCEL_FS_SEL << 3,
+    else if( AccelSensitivityFS |= (ACCEL_FS_SEL << 3),
              MPU6050_SUCCESS != writeI2cRegisters( (uint8_t)ACCEL_CONFIG, (uint8_t *)&AccelSensitivityFS, (uint8_t)ACCEL_CONFIG_SIZE )
            )
     { // Write failed
         Serial.printf( "ERROR: MPU6050 Init: failed to set accelerometer sensitivity\n" );
-        AccelSensitivity = ACCEL_SCALE;
+        AccelSensitivity = ACCEL_SENSITIVITY;
         AccelSensitivityFS = 0;
     }
     else

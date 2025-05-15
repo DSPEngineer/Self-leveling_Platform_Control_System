@@ -24,7 +24,7 @@ void setup()
   delay(250);
 
   mySensor = new mpu6050( 0 ); // ADO = 0
-  mySensor->sensorReset();
+//  mySensor->sensorReset();
   delay(1000);
 
   mySensor->setPowerState( mpu6050::POWER_WAKE );

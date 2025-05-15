@@ -13,8 +13,8 @@
 #define  GYRO_REG_SIZE         6
 #define  ACCEL_REG_SIZE        6
 
-#define ACCEL_SCALE         16384.0
-#define GYRO_SCALE          131.0
+#define ACCEL_SENSITIVITY   16384.0
+#define  GYRO_SENSITIVITY     131.0
 
 // Power Macros
 #define POWER_STRING( a )  \
@@ -140,7 +140,7 @@ class mpu6050
     float               temperature                 = 0.0;              // Raw temperature value
 
     // Gyro values
-    float               GyroSensitivity             = GYRO_SCALE;       // Scale factor for the gyro
+    float               GyroSensitivity             = GYRO_SENSITIVITY; // Scale factor for the gyro
     int16_t             GyroSensitivityFS           = 0;                // Full scale range
     uint8_t             gyroRaw[GYRO_REG_SIZE]      = { 0 };            // Raw data from the sensor
     int16_t             GyroX                       = 0;
@@ -152,9 +152,9 @@ class mpu6050
     float               GyroZ_cal                   = 0;
 
     // Accelerometer values
-    float               AccelSensitivity            = ACCEL_SCALE;      // Scale factor for the accelerometer
-    uint8_t             AccelSensitivityFS          = 0;                // Full scale range
-    uint8_t             accelRaw[ACCEL_REG_SIZE]    = { 0 };            // Raw data from the sensor
+    float               AccelSensitivity            = ACCEL_SENSITIVITY; // Scale factor for the accelerometer
+    uint8_t             AccelSensitivityFS          = 0;                 // Full scale range
+    uint8_t             accelRaw[ACCEL_REG_SIZE]    = { 0 };             // Raw data from the sensor
     int16_t             AccelX                      = 0;
     int16_t             AccelY                      = 0;
     int16_t             AccelZ                      = 0;
