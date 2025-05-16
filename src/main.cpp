@@ -61,6 +61,10 @@ uint16_t motorAngle = 90;
  float gyroAngleY = 0;
  float gyroAngleZ = 0;
 
+ float accRoll = 0;
+ float accPitch = 0;
+ float accYaw = 0;
+
 float roll  = 0;
 float pitch = 0;
 float yaw   = 0;
@@ -131,8 +135,8 @@ void loop()
   }
   else
   {
-    accAngleX = ( atan(      ay / sqrt( pow(ax, 2) + pow(az, 2) ) ) * 180 / PI ) - 0.58; // AccErrorX ~(0.58) See the calculate_IMU_error()custom function for more details
-    accAngleY = ( atan( -1 * ax / sqrt( pow(ay, 2) + pow(az, 2) ) ) * 180 / PI ) + 1.58; // AccErrorY ~(-1.58)
+     accRoll =  atan(      ay / sqrt( (ax * ax) + (az * az) ) ); // AccErrorX ~(0.58) See the calculate_IMU_error()custom function for more details
+    accPitch =  atan( -1 * ax / sqrt( (ay * ay) + (az * az) ) ); // AccErrorY ~(-1.58)
 //    delay(125);
   }
 

@@ -942,7 +942,7 @@ mpu6050::init( void )
 
 
     // Set Gyro Sensitivity
-    #define GYRO_FS_SEL         0x00 // 0=250, 1=500, 2=1000, 3=2000  scale in: +/- [degrees/sec]
+    #define GYRO_FS_SEL         0x01 // 0=250, 1=500, 2=1000, 3=2000  scale in: +/- [degrees/sec]
     #define GYRO_CONFIG         0x1B // Gyro Configuration Register 
     #define GYRO_CONFIG_SIZE       1 // Gyro Configuration Register size 
 
@@ -971,8 +971,8 @@ mpu6050::init( void )
 
     // Set Accel Sensitivity
     #define ACCEL_FS_SEL         0x02 // 0=2g, 1=4g, 2=8g, 3=16g  range: +/- [ g ]
-    #define ACCEL_CONFIG         0x1C // Gyro Configuration Register 
-    #define ACCEL_CONFIG_SIZE       1 // Gyro Configuration Register size
+    #define ACCEL_CONFIG         0x1C // Accelerometer Configuration Register 
+    #define ACCEL_CONFIG_SIZE       1 // Accelerometer Configuration Register size
 
     AccelSensitivity /= pow( 2, ACCEL_FS_SEL );
     if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)ACCEL_CONFIG, (uint8_t *)&AccelSensitivityFS, (uint8_t)ACCEL_CONFIG_SIZE ) )
@@ -995,6 +995,31 @@ mpu6050::init( void )
                     , AccelSensitivity, ACCEL_FS_SEL, AccelSensitivityFS
                     );
     }
+
+    // Low Pass Filter
+    #define ACCEL_DLPF_CFG      0x05    // 0=260Hz, 1=184Hz, 2=94Hz, 3=44Hz, 4=21Hz, 5=10Hz, 6=5Hz
+    #define ACCEL_CONFIG2       0x1D    // Low Pass Filter Configuration Register
+    #define ACCEL_CONFIG2_SIZE     1    // Low Pass Filter Configuration Register size
+    uint8_t AccelDLPF = ACCEL_DLPF_CFG; // Set to 10Hz
+    if( MPU6050_SUCCESS != readI2cRegisters( (uint8_t)ACCEL_CONFIG2, (uint8_t *)&AccelDLPF, (uint8_t)ACCEL_CONFIG2_SIZE ) )
+    {
+        Serial.printf( "ERROR: MPU6050 Init: failed to read accelerometer low pass filter\n" );
+        AccelDLPF = 0;
+    }
+    else if( AccelDLPF |= (ACCEL_DLPF_CFG << 3),
+             MPU6050_SUCCESS != writeI2cRegisters( (uint8_t)ACCEL_CONFIG2, (uint8_t *)&AccelDLPF, (uint8_t)ACCEL_CONFIG2_SIZE )
+           )
+    { // Write failed
+        Serial.printf( "ERROR: MPU6050 Init: failed to set accelerometer low pass filter\n" );
+        AccelDLPF = 0;
+    }
+    else
+    { // Write was successful
+        Serial.printf( " INFO: MPU6050 Init: Accel Low Pass Filter: %d, REG: %02#x\n"
+                       , AccelDLPF, ACCEL_DLPF_CFG
+                     );
+    }
+
 
     gyroCalibrate( );
     accelCalibrate( );
