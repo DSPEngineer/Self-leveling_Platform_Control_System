@@ -8,61 +8,70 @@
 
 #include <servoLib.h>
 
+
 // Constructor
 servoLib::
-servoLib( uint8_t pin, float frequency )
+servoLib( uint8_t pin, uint frequency ) : pin(pin), frequency( frequency) 
 {
-    Serial.printf( "INFO: servoLib Constructor\n" );
-    init( pin, frequency );
+    Serial.printf( " INFO: MG996R servoLib Constructor\n" );
+    init( );
 }
+
 
 
 // Destructor
 servoLib::
 ~servoLib()
 {
-    Serial.printf( "INFO: servoLib Destructor\n" );
+    Serial.printf( " INFO: MG996R servoLib Destructor\n" );
 }
 
 
 // Common initialization
 void 
 servoLib::
-init( uint8_t pin, float frequency )
+init( void )
 {
-    Serial.printf( "INFO: MG996R_Servo init() - Pin: %d, Frequency: %d\n", pin, frequency );
+    Serial.printf( " INFO: MG996R Servo init() - Pin: %d, Frequency: %d\n", pin, frequency );
 
     // Set the PWM frequency
     analogWriteFrequency( pin, frequency ); 
-    analogWrite(pin, 128 );
+
+    for( int angle = MAX_ANGLE; angle > MIN_ANGLE; angle -= 45 )
+    { // Set the servo to the initial position
+        setAngle( angle );
+        delay(1000);
+    }
+
+    // Start at neutral angle
+    setAngle( MID_ANGLE );
+    delay(2000);
 }
 
 
 // Common initialization
-uint16_t 
+uint16_t
 servoLib::
 setAngle( uint16_t angle )
 {
-    u_int16_t retVal = 0xFFFF;        // Return an error
+    uint16_t retVal = angle;        // Return an error
 
-    if( 180 < angle )
+    if( MAX_ANGLE < angle )
     { // Angle is above max range
-        Serial.printf( "ERROR: servoAngle - angle out of range (%d)\n", angle );
-        retVal = MAX_COUNT;
+        Serial.printf( "ERROR: MG996R servoLib setAngle - angle greater than MAX range (%d)\n", angle );
+        retVal = MAX_ANGLE;
     }
-    else if( 0 == angle)
+    else if( MIN_ANGLE > angle )
     { // Angle is min
-        retVal = MIN_COUNT;
-    }
-    else if( 90 == angle)
-    { // Angle is middle
-        retVal = MID_COUNT;
+        Serial.printf( "ERROR: MG996R servoLib setAngle - angle less than MIN range (%d)\n", angle );
+        retVal = MIN_ANGLE;
     }
     else
     { // Angle is in range
-        retVal = MIN_COUNT + ( ( angle * ( MAX_COUNT - MIN_COUNT ) ) / 180 );
+        retVal = angle;
     }
 
+    Serial.printf( " INFO: MG996R servoLib setAngle - angle %d, val %d\n", angle,retVal );
     analogWrite( this->pin, retVal ); 
 
     return retVal;

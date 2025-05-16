@@ -5,12 +5,15 @@
 //#include <accelerometer_utils.h>
 
 #define SERIAL_BAUD_RATE  115200
+#define PITCH_CONNECTOR     0
+#define ROLL_CONNECTOR      1
 
 unsigned long prevTime = 0;
 unsigned long currTime = 0;
 
-mpu6050   *mySensor = NULL;
-servoLib  servo(0);
+mpu6050   *mySensor   = NULL;
+servoLib  *servoRoll  = NULL;
+servoLib  *servoPitch = NULL;
 
 void setup()
 {
@@ -22,6 +25,14 @@ void setup()
   Serial.print( "SETUP: BEE-526 - Self-leveling Platform Control System\n" );
   Serial.printf( " INFO: Serial Baud: %d\n", SERIAL_BAUD_RATE );
   delay(250);
+
+  // Crate the Pitch control servo with PWM frequency
+  servoPitch = new servoLib( PITCH_CONNECTOR, 400 ); // Pin 0, 50Hz
+  delay(1000);
+  // Crate the Roll control servo with PWM frequency
+  servoRoll = new servoLib( ROLL_CONNECTOR, 400 ); // Pin 0, 50Hz
+  delay(1000);
+
 
   mySensor = new mpu6050( 0 ); // ADO = 0
 //  mySensor->sensorReset();
@@ -45,7 +56,8 @@ void setup()
 
   mySensor->setTempState( mpu6050::TEMPERATURE_ENABLE );
 
-  servo.setAngle( 90 );
+  servoPitch->setAngle( 45 );
+  servoRoll->setAngle( 45 );
 
   Serial.print( "SDONE: BEE-526 - Self-leveling Platform Control System\n" );
   prevTime = millis();
@@ -89,7 +101,7 @@ void loop()
   }
   else
   {
-    servo.setAngle( motorAngle );
+//    servo->setAngle( motorAngle );
     #ifdef JDEBUG
     Serial.printf( "LOOP: BEE-526 - Angle: %d [deg], Pwr: [%s], Temp: [%f C, %f F] \n"
                    , motorAngle
@@ -144,7 +156,6 @@ void loop()
   roll = 0.96 * gyroAngleX + 0.04 * accAngleX;
   pitch = 0.96 * gyroAngleY + 0.04 * accAngleY;
 
-  servo.setAngle( motorAngle );
   // Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
   //                 , (int16_t)gx, (int16_t)gy, (uint16_t)gz
   //              );
@@ -159,22 +170,37 @@ void loop()
                 );
   Serial.printf( "\n" );
 
-  if ( motorAngle > 120) 
+  //#define MIN_ANGLE  50
+  //#define MAX_ANGLE  270
+
+  if ( motorAngle > MAX_ANGLE ) 
   {
-    motorAngle = 60; // MIN_COUNT;
-    analogWrite(0, motorAngle );
-    delay(10);
+    motorAngle = MIN_ANGLE; // MIN_COUNT;
+    servoRoll->setAngle( motorAngle );
+    servoPitch->setAngle( MAX_ANGLE - motorAngle );
+    // delay(100);
   }
-  else if ( motorAngle < 60) 
+  else if ( motorAngle < MIN_ANGLE ) 
   {
-    motorAngle = 60; // MIN_COUNT;
-    analogWrite(0, motorAngle );
-    delay(10);
+    motorAngle = MIN_ANGLE; // MIN_COUNT;
+    servoRoll->setAngle( motorAngle );
+    servoPitch->setAngle( MAX_ANGLE - motorAngle );
+    // delay(100);
   }
   else
-    motorAngle += 1; //INCREMENT;
+  {
+    motorAngle += 2; //INCREMENT;
+    servoRoll->setAngle( motorAngle );
+    servoPitch->setAngle( MAX_ANGLE - motorAngle );
+    // delay(100);
+  }
+
 
   prevTime = millis();
-  delay(500);
+  delay(100);
 
 }
+
+
+
+
