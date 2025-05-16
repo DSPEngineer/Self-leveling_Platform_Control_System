@@ -16,6 +16,8 @@
 #define ACCEL_SENSITIVITY   16384.0
 #define  GYRO_SENSITIVITY     131.0
 
+#define ANGLE_CONVERSION    ( 180.0 / PI )
+
 // Power Macros
 #define POWER_STRING( a )  \
     ( mpu6050::POWER_SLEEP == (a) ) ? "SLEEP" : \

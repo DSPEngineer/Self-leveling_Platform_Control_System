@@ -22,8 +22,6 @@
 
 #define SERIAL_BAUD_RATE    115200
 
-#define ANGLE_CONVERSION    ( 180.0 / PI )
-
 #define isValidTemperatureState( a )  \
     (    ( mpu6050::TEMPERATURE_DISABLE == (a) ) \
       || ( mpu6050::TEMPERATURE_ENABLE  == (a) ) \

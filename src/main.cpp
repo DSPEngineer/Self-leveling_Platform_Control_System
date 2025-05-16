@@ -135,8 +135,8 @@ void loop()
   }
   else
   {
-     accRoll =  atan(      ay / sqrt( (ax * ax) + (az * az) ) ); // AccErrorX ~(0.58) See the calculate_IMU_error()custom function for more details
-    accPitch =  atan( -1 * ax / sqrt( (ay * ay) + (az * az) ) ); // AccErrorY ~(-1.58)
+     accRoll =  ANGLE_CONVERSION * atan(      ay / sqrt( (ax * ax) + (az * az) ) ); // AccErrorX ~(0.58) See the calculate_IMU_error()custom function for more details
+    accPitch =  ANGLE_CONVERSION * atan( -1 * ax / sqrt( (ay * ay) + (az * az) ) ); // AccErrorY ~(-1.58)
 //    delay(125);
   }
 
@@ -152,7 +152,7 @@ void loop()
                   , msecTime, secTime, temp
                 );
   Serial.printf( "  |  <DIR> Roll=%f   Pitch=%f   Yaw=%f"
-                  , roll, pitch, yaw
+                  , accRoll, accPitch, accYaw
                 );
   Serial.printf( "  |  <Gyr> X=%f  Y:=%f  Z=%f   |  <Acc> X=%f  Y=%f  Z=%f  |  <AccAngle> X=%f  Y=%f"
                   , gx, gy, gz, ax, ay, az, accAngleX, accAngleY
