@@ -31,14 +31,23 @@
 class servoLib
 {
     public:
-        servoLib( uint8_t pin, uint frequency = PWM_FREQUENCY );
+        servoLib( uint8_t pin,
+                  uint freq = PWM_FREQUENCY,
+                  uint16_t minAng=MIN_ANGLE,
+                  uint16_t maxAng=MAX_ANGLE
+                );
+
         ~servoLib();
 
         uint16_t setAngle( uint16_t angle );
       
     private:
-        uint8_t pin;
-        uint    frequency;
+        uint8_t     pin;
+        uint        frequency;
+        uint16_t    minServoAngle;
+        uint16_t    maxServoAngle;
+
+        uint16_t    midServoAngle;
 
 //        void init( u_int8_t pin, float frequency );
         void init( void );

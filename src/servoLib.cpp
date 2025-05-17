@@ -9,14 +9,24 @@
 #include <servoLib.h>
 
 
+// // Constructor
+// servoLib::
+// servoLib( uint8_t pin, uint frequency ) : pin(pin), frequency( frequency) 
+// {
+//     Serial.printf( " INFO: MG996R servoLib Constructor\n" );
+//     init( );
+// }
+
 // Constructor
-servoLib::
-servoLib( uint8_t pin, uint frequency ) : pin(pin), frequency( frequency) 
+servoLib::servoLib( uint8_t pin,
+                    uint freq,
+                    uint16_t minAng,
+                    uint16_t maxAng
+                  ) : pin(pin), frequency( freq ) , minServoAngle( minAng ), maxServoAngle( maxAng )
 {
     Serial.printf( " INFO: MG996R servoLib Constructor\n" );
     init( );
 }
-
 
 
 // Destructor
@@ -44,8 +54,8 @@ init( void )
     // }
 
     // Start at neutral angle
-//    setAngle( MID_ANGLE );
-//    setAngle( 0 );
+    // setAngle( MID_ANGLE );
+    // setAngle( 0 );
     delay(2000);
 }
 
@@ -57,15 +67,15 @@ setAngle( uint16_t angle )
 {
     uint16_t retVal = angle;        // Return an error
 
-    if( MAX_ANGLE < angle )
+    if( maxServoAngle < angle )
     { // Angle is above max range
-        Serial.printf( "ERROR: MG996R servoLib setAngle - angle greater than MAX range (%d)\n", angle );
-        retVal = MAX_ANGLE;
+        Serial.printf( "ERROR: MG996R servoLib setAngle - pin (%d) angle greater than MAX range (%d)\n", pin, angle );
+        //retVal = maxServoAngle;
     }
-    else if( MIN_ANGLE > angle )
+    else if( minServoAngle > angle )
     { // Angle is min
-        Serial.printf( "ERROR: MG996R servoLib setAngle - angle less than MIN range (%d)\n", angle );
-        retVal = MIN_ANGLE;
+        Serial.printf( "ERROR: MG996R servoLib setAngle - pin (%d) angle less than MIN range (%d)\n", pin, angle );
+        //retVal = minServoAngle;
     }
     else
     { // Angle is in range

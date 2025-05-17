@@ -27,7 +27,7 @@ void setup()
   delay(250);
 
   // Crate the Pitch control servo with PWM frequency
-  servoPitch = new servoLib( PITCH_CONNECTOR, 400 ); // Pin 0, 50Hz
+  servoPitch = new servoLib( PITCH_CONNECTOR, 400, 35, 260 ); // Pin 0, 400Hz
   delay(1000);
   // Crate the Roll control servo with PWM frequency
   servoRoll = new servoLib( ROLL_CONNECTOR, 400 ); // Pin 0, 50Hz
@@ -173,38 +173,41 @@ void loop()
   // Compute the pitch increment
   if ( motorPitch > MAX_ANGLE ) 
   {
-    motorPitch = MID_ANGLE; // MIN_COUNT;
+    motorPitch = MAX_ANGLE; // MIN_COUNT;
   }
   else if ( motorPitch < MIN_ANGLE ) 
   {
-    motorPitch = MID_ANGLE; // MIN_COUNT;
+    motorPitch = MIN_ANGLE; // MIN_COUNT;
   }
   else // we have a small pitch, within the allowed bounds
   {
-
     if ( 25 < accPitch ) // Large Positive Pitch
     {
-      motorPitch += 10; //INCREMENT;
+      motorPitch += 15; //INCREMENT;
     }
     if ( 15 < accPitch ) // Large Positive Pitch
     {
-      motorPitch += 6; //INCREMENT;
+      motorPitch += 5; //INCREMENT;
     }
     else if ( 2 < accPitch ) // Smalle Positive Pitch
     {
       motorPitch += 1; //INCREMENT;
     }
-    else if ( -2 > accPitch ) // Negative Pitch
+    else if ( -2 < accPitch ) // Negative Pitch
     {
       motorPitch -= 1; //INCREMENT;
     }
-    else if ( -15 > accPitch ) // Negative Pitch
+    else if ( -15 < accPitch ) // Negative Pitch
     {
-      motorPitch -= 6; //INCREMENT;
+      motorPitch -= 5; //INCREMENT;
     }
-    else if ( -25 > accPitch ) // Negative Pitch
+    // else if ( -25 < accPitch ) // Negative Pitch
+    // {
+    //   motorPitch -= 25; //INCREMENT;
+    // }
+    else
     {
-      motorPitch -= 10; //INCREMENT;
+      motorPitch -= 15; // MIN_COUNT;
     }
 
   }
@@ -223,7 +226,7 @@ void loop()
 
     if ( 25 < accRoll ) // Large Positive Pitch
     {
-      motorRoll += 10; //INCREMENT;
+      motorRoll += 20; //INCREMENT;
     }
     if ( 15 < accRoll ) // Large Positive Pitch
     {
@@ -243,7 +246,7 @@ void loop()
     }
     else if ( -25 > accRoll ) // Negative Pitch
     {
-      motorRoll -= 10; //INCREMENT;
+      motorRoll -= 20; //INCREMENT;
     }
 
   }
