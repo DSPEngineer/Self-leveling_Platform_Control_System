@@ -56,8 +56,8 @@ void setup()
 
   mySensor->setTempState( mpu6050::TEMPERATURE_ENABLE );
 
-  servoPitch->setAngle( 45 );
-  servoRoll->setAngle( 45 );
+  // servoPitch->setAngle( 45 );
+  // servoRoll->setAngle( 45 );
 
   Serial.print( "SDONE: BEE-526 - Self-leveling Platform Control System\n" );
   prevTime = millis();
@@ -65,7 +65,8 @@ void setup()
 }
 
 
-uint16_t motorAngle = 90;
+uint16_t motorPitch = 90;
+uint16_t motorRoll = 90;
 
  float accAngleX  = 0;
  float accAngleY  = 0;
@@ -149,12 +150,11 @@ void loop()
   {
      accRoll =  ANGLE_CONVERSION * atan(      ay / sqrt( (ax * ax) + (az * az) ) ); // AccErrorX ~(0.58) See the calculate_IMU_error()custom function for more details
     accPitch =  ANGLE_CONVERSION * atan( -1 * ax / sqrt( (ay * ay) + (az * az) ) ); // AccErrorY ~(-1.58)
-//    delay(125);
   }
 
   // Complementary filter - combine accelerometer and gyro angle values
   roll = 0.96 * gyroAngleX + 0.04 * accAngleX;
-  pitch = 0.96 * gyroAngleY + 0.04 * accAngleY;
+  pitch = ( 0.96 * gyroAngleY ) + ( 0.04 * accAngleY ) - 30;
 
   // Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
   //                 , (int16_t)gx, (int16_t)gy, (uint16_t)gz
@@ -170,31 +170,86 @@ void loop()
                 );
   Serial.printf( "\n" );
 
-  //#define MIN_ANGLE  50
-  //#define MAX_ANGLE  270
+  // Compute the pitch increment
+  if ( motorPitch > MAX_ANGLE ) 
+  {
+    motorPitch = MID_ANGLE; // MIN_COUNT;
+  }
+  else if ( motorPitch < MIN_ANGLE ) 
+  {
+    motorPitch = MID_ANGLE; // MIN_COUNT;
+  }
+  else // we have a small pitch, within the allowed bounds
+  {
 
-  if ( motorAngle > MAX_ANGLE ) 
-  {
-    motorAngle = MIN_ANGLE; // MIN_COUNT;
-    servoRoll->setAngle( motorAngle );
-    servoPitch->setAngle( MAX_ANGLE - motorAngle );
-    // delay(100);
-  }
-  else if ( motorAngle < MIN_ANGLE ) 
-  {
-    motorAngle = MIN_ANGLE; // MIN_COUNT;
-    servoRoll->setAngle( motorAngle );
-    servoPitch->setAngle( MAX_ANGLE - motorAngle );
-    // delay(100);
-  }
-  else
-  {
-    motorAngle += 2; //INCREMENT;
-    servoRoll->setAngle( motorAngle );
-    servoPitch->setAngle( MAX_ANGLE - motorAngle );
-    // delay(100);
+    if ( 25 < accPitch ) // Large Positive Pitch
+    {
+      motorPitch += 10; //INCREMENT;
+    }
+    if ( 15 < accPitch ) // Large Positive Pitch
+    {
+      motorPitch += 6; //INCREMENT;
+    }
+    else if ( 2 < accPitch ) // Smalle Positive Pitch
+    {
+      motorPitch += 1; //INCREMENT;
+    }
+    else if ( -2 > accPitch ) // Negative Pitch
+    {
+      motorPitch -= 1; //INCREMENT;
+    }
+    else if ( -15 > accPitch ) // Negative Pitch
+    {
+      motorPitch -= 6; //INCREMENT;
+    }
+    else if ( -25 > accPitch ) // Negative Pitch
+    {
+      motorPitch -= 10; //INCREMENT;
+    }
+
   }
 
+  // Compute the roll increment
+  if ( motorRoll > MAX_ANGLE ) 
+  {
+    motorRoll = MID_ANGLE; // MIN_COUNT;
+  }
+  else if ( motorRoll < MIN_ANGLE ) 
+  {
+    motorRoll = MID_ANGLE; // MIN_COUNT;
+  }
+  else // we have a small pitch, within the allowed bounds
+  {
+
+    if ( 25 < accRoll ) // Large Positive Pitch
+    {
+      motorRoll += 10; //INCREMENT;
+    }
+    if ( 15 < accRoll ) // Large Positive Pitch
+    {
+      motorRoll += 6; //INCREMENT;
+    }
+    else if ( 2 < accRoll ) // Smalle Positive Pitch
+    {
+      motorRoll += 1; //INCREMENT;
+    }
+    else if ( -2 > accRoll ) // Negative Pitch
+    {
+      motorRoll -= 1; //INCREMENT;
+    }
+    else if ( -15 > accRoll ) // Negative Pitch
+    {
+      motorRoll -= 6; //INCREMENT;
+    }
+    else if ( -25 > accRoll ) // Negative Pitch
+    {
+      motorRoll -= 10; //INCREMENT;
+    }
+
+  }
+
+  servoPitch->setAngle( motorPitch );
+  servoRoll->setAngle( motorRoll );
 
   prevTime = millis();
   delay(100);

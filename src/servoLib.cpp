@@ -37,14 +37,15 @@ init( void )
     // Set the PWM frequency
     analogWriteFrequency( pin, frequency ); 
 
-    for( int angle = MAX_ANGLE; angle > MIN_ANGLE; angle -= 45 )
-    { // Set the servo to the initial position
-        setAngle( angle );
-        delay(1000);
-    }
+    // for( int angle = MAX_ANGLE; angle > MIN_ANGLE; angle -= 45 )
+    // { // Set the servo to the initial position
+    //     setAngle( angle );
+    //     delay(1000);
+    // }
 
     // Start at neutral angle
-    setAngle( MID_ANGLE );
+//    setAngle( MID_ANGLE );
+//    setAngle( 0 );
     delay(2000);
 }
 
@@ -70,8 +71,9 @@ setAngle( uint16_t angle )
     { // Angle is in range
         retVal = angle;
     }
-
+    #ifdef JDEBUG
     Serial.printf( " INFO: MG996R servoLib setAngle - angle %d, val %d\n", angle,retVal );
+    #endif
     analogWrite( this->pin, retVal ); 
 
     return retVal;
