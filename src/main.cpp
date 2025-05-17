@@ -17,10 +17,10 @@ servoLib  *servoPitch = NULL;
 
 void setup()
 {
-  delay(2000);
+  delay(3000);
 
   Serial.begin( SERIAL_BAUD_RATE );
-  //delay(3000);
+  delay(1000);
 
   Serial.print( "SETUP: BEE-526 - Self-leveling Platform Control System\n" );
   Serial.printf( " INFO: Serial Baud: %d\n", SERIAL_BAUD_RATE );
@@ -165,8 +165,11 @@ void loop()
   Serial.printf( "  |  <DIR> Roll=%f   Pitch=%f   Yaw=%f"
                   , accRoll, accPitch, accYaw
                 );
-  Serial.printf( "  |  <Gyr> X=%f  Y:=%f  Z=%f   |  <Acc> X=%f  Y=%f  Z=%f  |  <AccAngle> X=%f  Y=%f"
-                  , gx, gy, gz, ax, ay, az, accAngleX, accAngleY
+  Serial.printf( "  |  <Gyr> X=%f  Y:=%f  Z=%f   |  <Acc> X=%f  Y=%f  Z=%f"
+                  , gx, gy, gz, ax, ay, az
+                );
+  Serial.printf( "  |  <AccAngle> X=%f  Y=%f  |  <GyrAngle> X=%f  Y=%f"
+                  , accAngleX, accAngleY, gyroAngleX, gyroAngleY
                 );
   Serial.printf( "\n" );
 
@@ -179,35 +182,39 @@ void loop()
   {
     motorPitch = MIN_ANGLE; // MIN_COUNT;
   }
-  else // we have a small pitch, within the allowed bounds
+  else // we have a pitch, within the allowed bounds
   {
-    if ( 25 < accPitch ) // Large Positive Pitch
+    if ( 25 < accPitch )        // Large Positive Pitch
     {
-      motorPitch += 15; //INCREMENT;
+      motorPitch += 15;
     }
-    if ( 15 < accPitch ) // Large Positive Pitch
+    else if ( 10 < accPitch )   // Large Positive Pitch
     {
-      motorPitch += 5; //INCREMENT;
+      motorPitch += 5;
     }
-    else if ( 2 < accPitch ) // Smalle Positive Pitch
+    else if ( 2 < accPitch )    // Small Positive Pitch
     {
-      motorPitch += 1; //INCREMENT;
+      motorPitch += 1;
     }
-    else if ( -2 < accPitch ) // Negative Pitch
+    else if ( 0 < accPitch )    // Smallest Positive Pitch
     {
-      motorPitch -= 1; //INCREMENT;
+      motorPitch += 0;
     }
-    else if ( -15 < accPitch ) // Negative Pitch
+    else if ( -25 > accPitch )  // Large negative Pitch
     {
-      motorPitch -= 5; //INCREMENT;
+      motorPitch -= 15;
     }
-    // else if ( -25 < accPitch ) // Negative Pitch
-    // {
-    //   motorPitch -= 25; //INCREMENT;
-    // }
-    else
+    else if ( -10 > accPitch )  // Large negative Pitch
     {
-      motorPitch -= 15; // MIN_COUNT;
+      motorPitch -= 5;
+    }
+    else if ( -2 > accPitch )   // Small Negative Pitch
+    {
+      motorPitch -= 1;
+    }
+    else                        // Smallest Negative Pitch
+    {
+      motorPitch -= 0;
     }
 
   }
@@ -224,29 +231,37 @@ void loop()
   else // we have a small pitch, within the allowed bounds
   {
 
-    if ( 25 < accRoll ) // Large Positive Pitch
+    if ( 25 < accRoll )         // Large Positive Roll
     {
-      motorRoll += 20; //INCREMENT;
+      motorRoll += 15;
     }
-    if ( 15 < accRoll ) // Large Positive Pitch
+    else if ( 10 < accRoll )    // Large Positive Roll
     {
-      motorRoll += 6; //INCREMENT;
+      motorRoll += 5;
     }
-    else if ( 2 < accRoll ) // Smalle Positive Pitch
+    else if ( 2 < accRoll )     // Small Positive Roll
     {
-      motorRoll += 1; //INCREMENT;
+      motorRoll += 1;
     }
-    else if ( -2 > accRoll ) // Negative Pitch
+    else if ( 0 < accRoll )     // Smallest Positive Roll
     {
-      motorRoll -= 1; //INCREMENT;
+      motorRoll += 0;
     }
-    else if ( -15 > accRoll ) // Negative Pitch
+    else  if ( -25 > accRoll )  // Large Negative Roll
     {
-      motorRoll -= 6; //INCREMENT;
+      motorRoll -= 15;
     }
-    else if ( -25 > accRoll ) // Negative Pitch
+    else  if ( -10 > accRoll )  // Large Negative Roll
     {
-      motorRoll -= 20; //INCREMENT;
+      motorRoll -= 5;
+    }
+    else if ( -2 > accRoll )    // Small Negative Roll
+    {
+      motorRoll -= 1;
+    }
+    else                        // Smallest Negative Roll
+    {
+      motorRoll -= 0;
     }
 
   }
@@ -255,7 +270,7 @@ void loop()
   servoRoll->setAngle( motorRoll );
 
   prevTime = millis();
-  delay(100);
+  delay( 75 );
 
 }
 
