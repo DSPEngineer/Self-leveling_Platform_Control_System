@@ -154,7 +154,7 @@ void loop()
 
   // Complementary filter - combine accelerometer and gyro angle values
   roll = 0.96 * gyroAngleX + 0.04 * accAngleX;
-  pitch = ( 0.96 * gyroAngleY ) + ( 0.04 * accAngleY ) - 30;
+  pitch = ( 0.96 * gyroAngleY ) + ( 0.04 * accAngleY ) - 25;
 
   // Serial.printf( "LOOP: BEE-526 - GyroX: %04#x,GyroY: %04#x,GyroZ: %04#x  \n"
   //                 , (int16_t)gx, (int16_t)gy, (uint16_t)gz
@@ -186,35 +186,35 @@ void loop()
   {
     if ( 25 < accPitch )        // Large Positive Pitch
     {
-      motorPitch += 15;
+      motorPitch -= 15;
     }
     else if ( 10 < accPitch )   // Large Positive Pitch
     {
-      motorPitch += 5;
+      motorPitch -= 1;
     }
-    else if ( 2 < accPitch )    // Small Positive Pitch
+    else if ( 1 < accPitch )    // Small Positive Pitch
     {
-      motorPitch += 1;
+      motorPitch -= 0.5;
     }
     else if ( 0 < accPitch )    // Smallest Positive Pitch
     {
-      motorPitch += 0;
+      motorPitch -= 0;
     }
     else if ( -25 > accPitch )  // Large negative Pitch
     {
-      motorPitch -= 15;
+      motorPitch += 15;
     }
     else if ( -10 > accPitch )  // Large negative Pitch
     {
-      motorPitch -= 5;
+      motorPitch += 1;
     }
-    else if ( -2 > accPitch )   // Small Negative Pitch
+    else if ( -1 > accPitch )   // Small Negative Pitch
     {
-      motorPitch -= 1;
+      motorPitch += 0.5;
     }
     else                        // Smallest Negative Pitch
     {
-      motorPitch -= 0;
+      motorPitch += 0;
     }
 
   }
@@ -237,11 +237,11 @@ void loop()
     }
     else if ( 10 < accRoll )    // Large Positive Roll
     {
-      motorRoll += 5;
-    }
-    else if ( 2 < accRoll )     // Small Positive Roll
-    {
       motorRoll += 1;
+    }
+    else if ( 1 < accRoll )     // Small Positive Roll
+    {
+      motorRoll += 0.5;
     }
     else if ( 0 < accRoll )     // Smallest Positive Roll
     {
@@ -253,11 +253,11 @@ void loop()
     }
     else  if ( -10 > accRoll )  // Large Negative Roll
     {
-      motorRoll -= 5;
-    }
-    else if ( -2 > accRoll )    // Small Negative Roll
-    {
       motorRoll -= 1;
+    }
+    else if ( -1 > accRoll )    // Small Negative Roll
+    {
+      motorRoll -= 0.5;
     }
     else                        // Smallest Negative Roll
     {
