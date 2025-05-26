@@ -2,12 +2,16 @@
 #include <mpu_6050.h>
 #include <servoLib.h>
 #include <IntervalTimer.h>
-//#include <accelerometer_utils.h>
+#include <led.h>
 
 #define SERIAL_BAUD_RATE  115200
 #define PITCH_CONNECTOR     0
 #define ROLL_CONNECTOR      1
 
+#define  LED_RIGHT          2
+#define  LED_FRONT          3
+#define  LED_LEFT          22
+#define  LED_BACK          23
 unsigned long prevTime = 0;
 unsigned long currTime = 0;
 
@@ -26,12 +30,29 @@ void setup()
   Serial.printf( " INFO: Serial Baud: %d\n", SERIAL_BAUD_RATE );
   delay(250);
 
+  pinMode( LED_FRONT, OUTPUT) ;
+  pinMode( LED_BACK,  OUTPUT) ;
+  pinMode( LED_LEFT,  OUTPUT) ;
+  pinMode( LED_RIGHT, OUTPUT) ;
+
+// //  analogWriteResolution( 8 ); // Set the analog write resolution to 8 bits (0-255)
+// //  Serial.printf( " INFO: Analog Write Resolution: %d bits\n", analogWriteResolution() );
+   analogWrite( LED_FRONT, 255 ); // Set the LED on
+   analogWrite( LED_BACK, 255 );  // Set the LED ON
+
   // Crate the Pitch control servo with PWM frequency
   servoPitch = new servoLib( PITCH_CONNECTOR, 400, 35, 260 ); // Pin 0, 400Hz
   delay(1000);
+  analogWrite( LED_FRONT, 0 ); // Set the LED off
+  analogWrite( LED_BACK,  0 ); // Set the LED off
+
   // Crate the Roll control servo with PWM frequency
+   analogWrite( LED_LEFT,  255 ); // Set the LED on
+   analogWrite( LED_RIGHT, 255 ); // Set the LED ON
   servoRoll = new servoLib( ROLL_CONNECTOR, 400 ); // Pin 0, 50Hz
   delay(1000);
+   analogWrite( LED_LEFT,  0 ); // Set the LED off
+   analogWrite( LED_RIGHT, 0 ); // Set the LED Off
 
 
   mySensor = new mpu6050( 0 ); // ADO = 0
@@ -129,9 +150,15 @@ void loop()
     // gy -= 2.00; // GyroErrorY ~(2)
     // gz += 0.79; // GyroErrorZ ~ (-0.8)
     // Currently the raw values are in degrees per seconds, deg/s, so we need to multiply by sendonds (s) to get the angle in degrees
+#if 1
     gyroAngleX += gx * secTime; // deg/s * s = deg
     gyroAngleY += gy * secTime;
-    yaw +=  gz * secTime;
+    yaw += gz * secTime;
+#else
+    gyroAngleX += ( gyroAngleX + gx * secTime ) / 2 ; // deg/s * s = deg
+    gyroAngleY += ( gyroAngleY + gy * secTime ) /2;
+    yaw +=  ( yaw + gz * secTime ) /2;
+#endif
   }
 
 
@@ -162,8 +189,8 @@ void loop()
   Serial.printf( "LOOP: BEE-526 - Time: (%u [ms]) %f [s], Temp=%f"
                   , msecTime, secTime, temp
                 );
-  Serial.printf( "  |  <DIR> Roll=%f   Pitch=%f   Yaw=%f"
-                  , accRoll, accPitch, accYaw
+  Serial.printf( "  |  <DIR> Roll=%f (%f)   Pitch=%f (%f)   Yaw=%f"
+                  , accRoll, motorRoll, accPitch, motorPitch, accYaw
                 );
   Serial.printf( "  |  <Gyr> X=%f  Y:=%f  Z=%f   |  <Acc> X=%f  Y=%f  Z=%f"
                   , gx, gy, gz, ax, ay, az
@@ -177,47 +204,75 @@ void loop()
   if ( motorPitch > MAX_ANGLE ) 
   {
     motorPitch = MAX_ANGLE; // MIN_COUNT;
+//    analogWrite( LED_FRONT, 255 ); // Turn Off LED
   }
   else if ( motorPitch < MIN_ANGLE ) 
   {
     motorPitch = MIN_ANGLE; // MIN_COUNT;
+//    analogWrite( LED_BACK, 255 ); // Turn Off LED
   }
-  else // we have a pitch, within the allowed bounds
+  else // we have a small pitch, within the allowed bounds
   {
     if ( 25 < accPitch )        // Large Positive Pitch
     {
-      motorPitch -= 15;
+      motorPitch += 15;
     }
     else if ( 10 < accPitch )   // Large Positive Pitch
     {
-      motorPitch -= 1;
+      motorPitch += 3;
     }
-    else if ( 1 < accPitch )    // Small Positive Pitch
+    else if ( 7 < accPitch )   // Large Positive Pitch
     {
-      motorPitch -= 0.5;
+      motorPitch += 2;
     }
-    else if ( 0 < accPitch )    // Smallest Positive Pitch
-    {
-      motorPitch -= 0;
-    }
-    else if ( -25 > accPitch )  // Large negative Pitch
-    {
-      motorPitch += 15;
-    }
-    else if ( -10 > accPitch )  // Large negative Pitch
+    else if ( 2 < accPitch )    // Small Positive Pitch
     {
       motorPitch += 1;
     }
-    else if ( -1 > accPitch )   // Small Negative Pitch
-    {
-      motorPitch += 0.5;
-    }
-    else                        // Smallest Negative Pitch
+    else if ( 0 < accPitch )    // Smallest Positive Pitch
     {
       motorPitch += 0;
     }
+    else if ( -25 > accPitch )  // Large negative Pitch
+    {
+      motorPitch -= 15;
+    }
+    else if ( -10 > accPitch )  // Large negative Pitch
+    {
+      motorPitch -= 3;
+    }
+    else if ( -7 > accPitch )   // Small Negative Pitch
+    {
+      motorPitch -= 2;
+    }
+    else if ( -2 > accPitch )   // Small Negative Pitch
+    {
+      motorPitch -= 1;
+    }
+    else                        // Smallest Negative Pitch
+    {
+      motorPitch -= 0;
+    }
 
   }
+
+  if( accPitch > 4 )
+  {
+    analogWrite( LED_FRONT,   0 ); // Turn Off LED
+    analogWrite( LED_BACK,  255 ); // Turn On LED
+  }
+  else if ( accPitch < -4 )
+  {
+    analogWrite( LED_FRONT, 255 ); // Turn On LED
+    analogWrite( LED_BACK,    0 ); // Turn Off LED
+  }
+  else // we have a small pitch, within the allowed bounds
+  {
+    analogWrite( LED_FRONT, 0 ); // Turn Off LED
+    analogWrite( LED_BACK,  0 ); // Turn Off LED
+  }
+
+
 
   // Compute the roll increment
   if ( motorRoll > MAX_ANGLE ) 
@@ -233,44 +288,71 @@ void loop()
 
     if ( 25 < accRoll )         // Large Positive Roll
     {
-      motorRoll += 15;
+      motorRoll -= 15;
     }
     else if ( 10 < accRoll )    // Large Positive Roll
     {
-      motorRoll += 1;
+      motorRoll -= 3;
     }
-    else if ( 1 < accRoll )     // Small Positive Roll
+    else if ( 7 < accRoll )     // Small Positive Roll
     {
-      motorRoll += 0.5;
+      motorRoll -= 3;
     }
-    else if ( 0 < accRoll )     // Smallest Positive Roll
-    {
-      motorRoll += 0;
-    }
-    else  if ( -25 > accRoll )  // Large Negative Roll
-    {
-      motorRoll -= 15;
-    }
-    else  if ( -10 > accRoll )  // Large Negative Roll
+    else if ( 3 < accRoll )     // Small Positive Roll
     {
       motorRoll -= 1;
     }
-    else if ( -1 > accRoll )    // Small Negative Roll
-    {
-      motorRoll -= 0.5;
-    }
-    else                        // Smallest Negative Roll
+    else if ( 0 < accRoll )     // Smallest Positive Roll
     {
       motorRoll -= 0;
     }
+    else  if ( -25 > accRoll )  // Large Negative Roll
+    {
+      motorRoll += 15;
+    }
+    else  if ( -10 > accRoll )  // Large Negative Roll
+    {
+      motorRoll += 3;
+    }
+    else if ( -7 > accRoll )    // Small Negative Roll
+    {
+      motorRoll += 3;
+    }
+    else if ( -3 > accRoll )    // Small Negative Roll
+    {
+      motorRoll += 1;
+    }
+    else                        // Smallest Negative Roll
+    {
+      motorRoll += 0;
+    }
 
   }
+
+    if( accRoll > 2 )
+  {
+    analogWrite( LED_LEFT,    0 ); // Turn Off LED
+    analogWrite( LED_RIGHT, 255 ); // Turn On LED
+  }
+  else if ( accRoll < -2 )
+  {
+    analogWrite( LED_LEFT,  255 ); // Turn On LED
+    analogWrite( LED_RIGHT,   0 ); // Turn Off LED
+  }
+  else // we have a small pitch, within the allowed bounds
+  {
+    analogWrite( LED_LEFT,  0 ); // Turn Off LED
+    analogWrite( LED_RIGHT, 0 ); // Turn Off LED
+  }
+
 
   servoPitch->setAngle( motorPitch );
   servoRoll->setAngle( motorRoll );
 
   prevTime = millis();
-  delay( 75 );
+  delay( 125 );
+  // delay( 75 );
+  // delay( 75 );
 
 }
 

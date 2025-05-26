@@ -10,8 +10,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define PWM_FREQUENCY    50 // 50 Hz - default for MG996R Servo motor
-//#define PWM_FREQUENCY    100 // 100 Hz
+//#define PWM_FREQUENCY    50 // 50 Hz - default for MG996R Servo motor
+#define PWM_FREQUENCY    100 // 100 Hz
 //#define PWM_FREQUENCY    200 // 200 Hz
 //#define PWM_FREQUENCY    300 // 300 Hz
 //#define PWM_FREQUENCY    400 // 400 Hz

@@ -940,7 +940,7 @@ mpu6050::init( void )
 
 
     // Set Gyro Sensitivity
-    #define GYRO_FS_SEL         0x01 // 0=250, 1=500, 2=1000, 3=2000  scale in: +/- [degrees/sec]
+    #define GYRO_FS_SEL         0x02 // 0=250, 1=500, 2=1000, 3=2000  scale in: +/- [degrees/sec]
     #define GYRO_CONFIG         0x1B // Gyro Configuration Register 
     #define GYRO_CONFIG_SIZE       1 // Gyro Configuration Register size 
 
@@ -995,7 +995,7 @@ mpu6050::init( void )
     }
 
     // Low Pass Filter
-    #define ACCEL_DLPF_CFG      0x05    // 0=260Hz, 1=184Hz, 2=94Hz, 3=44Hz, 4=21Hz, 5=10Hz, 6=5Hz
+    #define ACCEL_DLPF_CFG      0x02    // 0=260Hz, 1=184Hz, 2=94Hz, 3=44Hz, 4=21Hz, 5=10Hz, 6=5Hz
     #define ACCEL_CONFIG2       0x1D    // Low Pass Filter Configuration Register
     #define ACCEL_CONFIG2_SIZE     1    // Low Pass Filter Configuration Register size
     uint8_t AccelDLPF = ACCEL_DLPF_CFG; // Set to 10Hz
