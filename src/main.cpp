@@ -145,11 +145,7 @@ void loop()
     temp = -1;
   }
   else
-  {  // Correct the outputs with the calculated error values
-    // gx += 0.56; // GyroErrorX ~(-0.56)
-    // gy -= 2.00; // GyroErrorY ~(2)
-    // gz += 0.79; // GyroErrorZ ~ (-0.8)
-    // Currently the raw values are in degrees per seconds, deg/s, so we need to multiply by sendonds (s) to get the angle in degrees
+  { // Currently the raw values are in degrees per seconds, deg/s, so we need to multiply by sendonds (s) to get the angle in degrees
 #if 1
     gyroAngleX += gx * secTime; // deg/s * s = deg
     gyroAngleY += gy * secTime;
