@@ -2,7 +2,6 @@
 #include <mpu_6050.h>
 #include <servoLib.h>
 #include <IntervalTimer.h>
-#include <led.h>
 
 #define SERIAL_BAUD_RATE  115200
 #define PITCH_CONNECTOR     0
